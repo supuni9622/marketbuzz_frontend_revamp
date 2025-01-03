@@ -10,8 +10,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header />
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6">
+        <main className="flex-1">
+          <div className="p-6">
             {children}
           </div>
         </main>

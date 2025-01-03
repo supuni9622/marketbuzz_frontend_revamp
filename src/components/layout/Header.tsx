@@ -2,9 +2,23 @@
 
 import React from 'react'
 import Image from 'next/image'
-import { CreditCard, ChevronDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { CreditCard, ChevronDown, LogOut } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export function Header() {
+  const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
+  const { user, logout } = useAuthStore((state) => ({
+    user: state.user,
+    logout: state.logout,
+  }))
+
+  const handleLogout = () => {
+    logout()
+    router.push('/login')
+  }
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center space-x-4">
@@ -18,17 +32,37 @@ export function Header() {
             Buy Credits
           </button>
         </div>
-        <button className="flex items-center space-x-2">
-          <div className="relative h-8 w-8 rounded-full overflow-hidden">
-            <Image
-              src="https://picsum.photos/200"
-              alt="User avatar"
-              fill
-              className="object-cover"
-            />
-          </div>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
-        </button>
+        <div className="relative">
+          <button 
+            className="flex items-center space-x-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <div className="relative h-8 w-8 rounded-full overflow-hidden">
+              <Image
+                src="https://picsum.photos/200"
+                alt="User avatar"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+              <div className="py-1">
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )
