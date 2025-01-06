@@ -6,16 +6,21 @@ import { useRouter } from 'next/navigation'
 import { CreditCard, ChevronDown, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 
+interface User {
+  name?: string
+  [key: string]: any
+}
+
 export function Header() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
-  const { user, logout } = useAuthStore((state) => ({
-    user: state.user,
-    logout: state.logout,
+  const { user, logoutUser } = useAuthStore((state) => ({
+    user: state.user as User,
+    logoutUser: state.logoutUser,
   }))
 
   const handleLogout = () => {
-    logout()
+    logoutUser()
     router.push('/login')
   }
 

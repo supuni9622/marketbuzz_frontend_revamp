@@ -1,67 +1,47 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface User {
-  id: string
-  email: string
-  name: string
-  merchantId?: string
-  cloverToken?: string
-}
-
 interface AuthState {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  login: () => Promise<void>
-  logout: () => void
+  user: object
+  token: string
+  role: string
+  organizationId: string
+  initCompleted: boolean
+  setUser: (user: object) => void
+  setToken: (token: string) => void
+  logoutUser: () => void
+  isLoggedIn: () => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      login: async () => {
-        try {
-          // TODO: Implement Clover OAuth flow
-          // This is a placeholder implementation
-          // You'll need to:
-          // 1. Redirect to Clover OAuth page
-          // 2. Handle the OAuth callback
-          // 3. Exchange code for access token
-          // 4. Get user info from Clover API
-          
-          // Simulating successful Clover login
-          const user = {
-            id: '1',
-            email: 'merchant@example.com',
-            name: 'Merchant User',
-            merchantId: 'EKCP62Z5XBKW2',
-            cloverToken: 'sandbox_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
-          }
-
-          set({
-            user,
-            token: user.cloverToken,
-            isAuthenticated: true,
-          })
-        } catch (error) {
-          throw error
-        }
+    (set, get) => ({
+      user: {},
+      token: '',
+      role: '',
+      organizationId: '',
+      initCompleted: false,
+      setUser: (user: object) => set({ user }),
+      setToken: (token: string) => {
+        set({ token, initCompleted: true })
       },
-      logout: () => {
-        // TODO: Implement Clover logout if needed
+      logoutUser: () => {
+        sessionStorage.removeItem('accessToken')
         set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
+          user: {},
+          token: '',
+          role: '',
+          organizationId: '',
+          initCompleted: true
         })
       },
+      isLoggedIn: () => {
+        const state = get()
+        return !!state.token
+      }
     }),
     {
-      name: 'auth-storage',
+      name: 'auth-storage'
     }
   )
 ) 
