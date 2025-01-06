@@ -1,8 +1,11 @@
-import { useEffect, ReactElement } from "react";
+'use client';
+
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useRouter, useSearchParams } from "next/navigation";
-import { UserRole } from "@/constants"; 
-import GTMService from "@/services/GTMService";
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { UserRole } from '@/constants';
+import GTMService from '@/services/GTMService';
+import Cookie from 'js-cookie'; 
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -14,37 +17,41 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const initCompleted = useAuthStore((state) => state.initCompleted);
 
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
+  const storeToken = (token: string) => {
+    Cookie.set('accessToken', token, { expires: 7, path: '/' }); // Set cookie with 7 days expiry
+  };
+
   useEffect(() => {
     const accessToken = searchParams.get('token');
-    console.debug("accessToken", accessToken)
-    console.debug("location", window.location.pathname)
     if (accessToken) {
       setToken(accessToken);
       sessionStorage.setItem("accessToken", accessToken);
-    } else if (sessionStorage.getItem("accessToken")) {
-      setToken(sessionStorage.getItem("accessToken") ?? "");
-    } else if (!token) {
-      logoutUser();
-      router.push("/login");
-    }
-  }, [setToken, logoutUser, searchParams]);
+      storeToken(accessToken);
+    } else if (!!sessionStorage.getItem("accessToken")) {
+        setToken(sessionStorage.getItem("accessToken") ?? "");
+        storeToken(sessionStorage.getItem("accessToken") ?? "");
+      } else {
+        logoutUser();
+      }
+  }, [setToken, logoutUser, router, pathname, storeToken]);
 
   useEffect(() => {
     if (initCompleted) {
       if (!isLoggedIn()) {
-        router.push("/login");
+        router.push('/login');
       } else if (!organizationId && role === UserRole.SUPERADMIN) {
-        router.push("/admin/switch");
-        GTMService.loginEvent({ organizationId: organizationId, role: role });
+        router.push('/admin/switch');
+        GTMService.loginEvent({ organizationId, role });
       } else {
-        GTMService.loginEvent({ organizationId: organizationId, role: role });
+        GTMService.loginEvent({ organizationId, role });
       }
     }
   }, [isLoggedIn, router, organizationId, role, initCompleted]);
 
-  return children;
+  return <>{children}</>;
 };
 
 export default AuthProvider;

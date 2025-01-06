@@ -1,28 +1,21 @@
-'use client'
+'use client';
 
-import React from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { CreditCard, ChevronDown, LogOut } from 'lucide-react'
-import { useAuthStore } from '@/store/useAuthStore'
-
-interface User {
-  name?: string
-  [key: string]: any
-}
+import React, { useEffect } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { CreditCard, ChevronDown, LogOut } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function Header() {
-  const router = useRouter()
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
-  const { user, logoutUser } = useAuthStore((state) => ({
-    user: state.user as User,
-    logoutUser: state.logoutUser,
-  }))
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
-  const handleLogout = () => {
-    logoutUser()
-    router.push('/login')
-  }
+  const logoutUser = useAuthStore((state) => state.logoutUser);
+
+  const handleLogout = React.useCallback(() => {
+    logoutUser();
+    router.push('/login');
+  }, [logoutUser, router]);
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
@@ -38,9 +31,9 @@ export function Header() {
           </button>
         </div>
         <div className="relative">
-          <button 
+          <button
             className="flex items-center space-x-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => setIsMenuOpen((prev) => !prev)}
           >
             <div className="relative h-8 w-8 rounded-full overflow-hidden">
               <Image
@@ -48,9 +41,10 @@ export function Header() {
                 alt="User avatar"
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 100vw, 48px"
               />
             </div>
-            <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+            <span className="text-sm font-medium text-gray-700">User</span>
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </button>
 
@@ -70,5 +64,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}
