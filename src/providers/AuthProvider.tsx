@@ -21,7 +21,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const searchParams = useSearchParams();
 
   const storeToken = (token: string) => {
-    Cookie.set('accessToken', token, { expires: 7, path: '/' }); // Set cookie with 7 days expiry
+    Cookie.set('accessToken', token, { expires: 0.25, path: '/' }); // Set cookie with 6 hours expiry
   };
 
   useEffect(() => {
