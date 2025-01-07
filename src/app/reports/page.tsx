@@ -5,22 +5,16 @@ import { Download, Calendar } from 'lucide-react'
 
 export default function ReportsPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Reports</h1>
-          <p className="mt-1 text-sm text-gray-500">View and analyze your business performance</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <Calendar className="mr-2 h-4 w-4" />
-            Last 30 Days
-          </button>
-          <button className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-end items-center gap-4">
+        <button className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <Calendar className="mr-2 h-4 w-4" />
+          Last 30 Days
+        </button>
+        <button className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
+          <Download className="mr-2 h-4 w-4" />
+          Export
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

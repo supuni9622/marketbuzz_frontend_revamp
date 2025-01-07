@@ -24,11 +24,7 @@ export default function CustomersPage() {
   const [activeSegment, setActiveSegment] = React.useState('All Customers')
 
   return (
-    <div className="space-y-6">
-      <div className="border-b pb-4">
-        <h1 className="text-2xl font-semibold text-gray-900">CUSTOMERS LIST</h1>
-      </div>
-
+    <div className="p-6 space-y-6">
       {/* Segments */}
       <div className="flex items-center space-x-4 overflow-x-auto">
         {customerSegments.map((segment) => (

@@ -5,9 +5,8 @@ import { Plus, Calendar, BarChart2 } from 'lucide-react'
 
 export default function CampaignsPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-gray-900">Campaigns</h1>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-end">
         <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
           <Plus className="mr-2 h-4 w-4" />
           New Campaign
