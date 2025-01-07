@@ -29,7 +29,11 @@ const navigation = [
   { 
     name: 'Reports', 
     href: '/reports', 
-    icon: BarChart 
+    icon: BarChart,
+    subItems: [
+      { name: 'Sales', href: '/reports/sales' },
+      { name: 'Customers', href: '/reports/customers' }
+    ]
   }
 ]
 
