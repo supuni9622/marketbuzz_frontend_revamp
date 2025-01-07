@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { CreditCard, ChevronDown, LogOut } from 'lucide-react';
@@ -20,7 +20,6 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center space-x-4">
-        <h2 className="text-lg font-semibold text-gray-900">Dashboard</h2>
       </div>
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-2">

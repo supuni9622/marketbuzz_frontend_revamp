@@ -35,9 +35,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            {isBasicView ? (
-              children
-            ) : (
+            {isBasicView ? children : (
               <MainLayout>
                 {children}
               </MainLayout>
