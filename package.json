@@ -30,7 +30,10 @@
     "shadcn-ui": "^0.9.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "@shoutout-labs/marketbuzz-constants": "^1.5.0",
+    "@shoutout-labs/marketbuzz-utils": "^1.6.0",
+    "@shoutout-labs/market_buzz_crm_types": "^v2.51.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
