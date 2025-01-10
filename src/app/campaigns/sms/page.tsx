@@ -1,76 +1,54 @@
 'use client'
 
-import React from 'react'
-import { X } from 'lucide-react'
+import React, { useState } from 'react'
+import { X, RefreshCw } from 'lucide-react'
+import { useCampaignTemplates, useCampaigns } from '@/contexts/CampaignDataContext'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import type { 
+  CampaignModel,
+  TemplateModel
+} from '@/types/campaign'
+import { format } from 'date-fns'
 
-interface CampaignTemplate {
-  id: string
-  title: string
-  messageText: string
-  isNew?: boolean
-  noCustomers: number
-  estimatedCost: number
-  buzzCredits: number
+// Campaign status enum
+export enum CampaignStatus {
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED'
 }
-
-interface CampaignHistory {
-  name: string
-  messageText: string
-  sentDateTime: string
-  status: 'ACTIVE' | 'INACTIVE'
-  noCustomers: number
-  credits: number
-  processedCount: number
-  sentCount: number
-}
-
-const campaignTemplates: CampaignTemplate[] = [
-  {
-    id: 'birthday-greetings',
-    title: 'BIRTHDAY GREETINGS',
-    messageText: 'Happy Birthday! Enjoy [Discount] off your next purchase. Have a wonderful year ahead!',
-    isNew: true,
-    noCustomers: 0,
-    estimatedCost: 0,
-    buzzCredits: 0
-  },
-  {
-    id: 'first-purchase',
-    title: 'FIRST PURCHASE',
-    messageText: 'Welcome to our store! Use code [FirstTime] for 10% off your first purchase.',
-    isNew: true,
-    noCustomers: 0,
-    estimatedCost: 0,
-    buzzCredits: 0
-  }
-]
-
-const campaignHistory: CampaignHistory[] = [
-  {
-    name: 'FIRST PURCHASE',
-    messageText: 'Thank you for shopping with us! We hope you love your purchase. Stay tuned for more exciting...',
-    sentDateTime: 'January 2, 2025 2:17:36 PM',
-    status: 'ACTIVE',
-    noCustomers: 0,
-    credits: 0,
-    processedCount: 0,
-    sentCount: 0
-  },
-  {
-    name: 'BIRTHDAY GREETINGS',
-    messageText: 'Happy Birthday! Enjoy 10% off your next purchase. Have a wonderful year ahead!',
-    sentDateTime: 'December 30, 2024 6:36:40 PM',
-    status: 'INACTIVE',
-    noCustomers: 0,
-    credits: 0,
-    processedCount: 0,
-    sentCount: 0
-  }
-]
 
 export default function SMSCampaignsPage() {
-  const [activeTab, setActiveTab] = React.useState('Campaign Ideas')
-  const [showBanner, setShowBanner] = React.useState(true)
+  const [activeTab, setActiveTab] = useState('Campaign Ideas')
+  const [showBanner, setShowBanner] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const { 
+    templates, 
+    isLoadingTemplates, 
+    refetchTemplates, 
+    isFetchingTemplates,
+    error: templatesError
+  } = useCampaignTemplates()
+
+  const {
+    campaigns,
+    isLoadingCampaigns,
+    refetchCampaigns,
+    isFetchingCampaigns,
+    error: campaignsError
+  } = useCampaigns()
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    if (activeTab === 'Campaign Ideas') {
+      await refetchTemplates()
+    } else {
+      await refetchCampaigns()
+    }
+    setIsRefreshing(false)
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -89,11 +67,41 @@ export default function SMSCampaignsPage() {
         </div>
       )}
 
+      {/* Error Banner */}
+      {(templatesError || campaignsError) && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center justify-between">
+          <p className="text-sm text-red-800">
+            {activeTab === 'Campaign Ideas' 
+              ? 'Failed to load campaign templates. Please try refreshing the page.'
+              : 'Failed to load campaigns. Please try refreshing the page.'
+            }
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="text-red-800 hover:text-red-900"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Create Campaign Button */}
-      <div className="flex justify-end">
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 flex items-center">
+      <div className="flex justify-between items-center">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isRefreshing || isFetchingTemplates || isFetchingCampaigns}
+        >
+          <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+        </Button>
+        <Button className="bg-blue-600 hover:bg-blue-500">
           + Create New Campaign
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -119,56 +127,59 @@ export default function SMSCampaignsPage() {
       {activeTab === 'Campaign Ideas' ? (
         /* Campaign Templates */
         <div className="space-y-4">
-          {campaignTemplates.map((template) => (
-            <div key={template.id} className="border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-lg font-medium">{template.title}</h3>
-                  {template.isNew && (
-                    <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
-                      New
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message Text
-                  </label>
-                  <p className="text-sm text-gray-600">{template.messageText}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    No. Customers
-                  </label>
-                  <p className="text-sm text-gray-900">{template.noCustomers}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estimated Cost
-                  </label>
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-900">
-                      {template.buzzCredits} Buzz Credit/s
-                    </p>
-                    <p className="text-sm text-gray-900">
-                      ${template.estimatedCost.toFixed(3)}
-                    </p>
+          {isLoadingTemplates ? (
+            <div className="text-center py-8">Loading templates...</div>
+          ) : templates?.length === 0 ? (
+            <div className="text-center py-8">No templates found.</div>
+          ) : (
+            templates?.map((template: TemplateModel) => (
+              <div key={template.id} className="border rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-lg font-medium">{template.name}</h3>
+                    {template.isNewTemplate && (
+                      <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
+                        New
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-4 flex justify-end">
-                <button className="text-blue-600 hover:text-blue-500 text-sm font-medium">
-                  Setup Campaign
-                </button>
+                <div className="grid grid-cols-3 gap-8">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Message Text
+                    </label>
+                    <p className="text-sm text-gray-600">{template.messageBody}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Type
+                    </label>
+                    <p className="text-sm text-gray-900">{template.type}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estimated Cost
+                    </label>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-900">
+                        ${template.costPerMessage.toFixed(3)} per message
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <Button variant="ghost" className="text-blue-600 hover:text-blue-500">
+                    Setup Campaign
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       ) : (
         /* Campaign History Table */
@@ -184,60 +195,80 @@ export default function SMSCampaignsPage() {
                     Message Text
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sent Date & Time
+                    Created Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    No. Customers
+                    Processed Messages
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Credits
+                    Sent Messages
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Processed Count
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sent Count
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {campaignHistory.map((campaign, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {campaign.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-normal text-sm text-gray-900 max-w-md">
-                      {campaign.messageText}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {campaign.sentDateTime}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        campaign.status === 'ACTIVE' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {campaign.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {campaign.noCustomers}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {campaign.credits}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {campaign.processedCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {campaign.sentCount}
+                {isLoadingCampaigns ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center">
+                      Loading campaigns...
                     </td>
                   </tr>
-                ))}
+                ) : campaigns?.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center">
+                      No campaigns found.
+                    </td>
+                  </tr>
+                ) : (
+                  campaigns?.map((campaign: CampaignModel) => (
+                    <tr key={campaign.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {campaign.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 line-clamp-2">
+                          {campaign.content}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {format(new Date(campaign.createdOn), 'MMM dd, yyyy HH:mm')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={cn(
+                          "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                          {
+                            "bg-green-100 text-green-800": campaign.status === CampaignStatus.COMPLETED,
+                            "bg-yellow-100 text-yellow-800": campaign.status === CampaignStatus.SCHEDULED,
+                            "bg-gray-100 text-gray-800": campaign.status === CampaignStatus.DRAFT,
+                            "bg-red-100 text-red-800": campaign.status === CampaignStatus.FAILED
+                          }
+                        )}>
+                          {campaign.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {campaign.report?.processedMessageCount || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {campaign.report?.sentMessageCount || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Button variant="ghost" className="text-blue-600 hover:text-blue-900">
+                          View Details
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
