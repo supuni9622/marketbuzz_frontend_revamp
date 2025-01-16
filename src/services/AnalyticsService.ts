@@ -97,6 +97,21 @@ const getVisitFrequencyAnalytics = (
   );
 };
 
+export interface Invoice {
+  id: string
+  purchaseDate: string
+  credits: number
+  cost: number
+}
+
+export const getInvoices = async (): Promise<Invoice[]> => {
+  const response = await fetch('/api/analytics/invoices')
+  if (!response.ok) {
+    throw new Error('Failed to fetch invoices')
+  }
+  return response.json()
+}
+
 export const AnalyticsService = {
   getTransactionCountAnalytics,
   getNewCustomerCountAnalytics,
@@ -108,5 +123,6 @@ export const AnalyticsService = {
   getSalesDateBucketAnalytics,
   getCustomersDateBucketAnalytics,
   getRepeatCustomersDateBucketAnalytics,
-  getVisitFrequencyAnalytics
+  getVisitFrequencyAnalytics,
+  getInvoices
 }; 
