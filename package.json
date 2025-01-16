@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.4",
+    "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.1.1",
     "@shoutout-labs/market_buzz_crm_types": "^v2.52.1",
     "@shoutout-labs/marketbuzz-constants": "^1.5.0",
