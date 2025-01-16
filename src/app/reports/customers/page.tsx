@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Calendar as CalendarIcon } from 'lucide-react'
-import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { DateRange } from 'react-day-picker'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
@@ -15,29 +15,27 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Bar,
+  ComposedChart
 } from 'recharts'
+import { useCustomerAnalytics } from '@/contexts/AnalyticsDataContext'
+import { Loader } from '@/components/common/Loader'
+import moment from 'moment'
 
-interface CustomerData {
-  date: string
-  newCustomers: number
-  repeatCustomers: number
+enum DateBucketEnum {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+  QUARTER = 'quarter',
+  YEAR = 'year'
 }
 
-const data: CustomerData[] = [
-  { date: '2024-12-02', newCustomers: 0, repeatCustomers: 0 },
-  { date: '2024-12-09', newCustomers: 0, repeatCustomers: 0 },
-  { date: '2024-12-16', newCustomers: 0, repeatCustomers: 0 },
-  { date: '2024-12-23', newCustomers: 0, repeatCustomers: 0 },
-  { date: '2024-12-30', newCustomers: 0, repeatCustomers: 0 },
-  { date: '2025-01-06', newCustomers: 0, repeatCustomers: 0 },
-]
-
 const timeRangeOptions = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quaters', label: 'Quaters' },
-  { value: 'yearly', label: 'Yearly' },
+  { value: DateBucketEnum.DAY, label: 'Daily' },
+  { value: DateBucketEnum.WEEK, label: 'Weekly' },
+  { value: DateBucketEnum.MONTH, label: 'Monthly' },
+  { value: DateBucketEnum.QUARTER, label: 'Quaters' },
+  { value: DateBucketEnum.YEAR, label: 'Yearly' },
 ]
 
 const quickSelectOptions = [
@@ -86,15 +84,147 @@ const quickSelectOptions = [
 ]
 
 export default function CustomersReportPage() {
-  const [timeRange, setTimeRange] = React.useState('weekly')
+  const [timeRange, setTimeRange] = React.useState(DateBucketEnum.WEEK)
   const [date, setDate] = React.useState<DateRange | undefined>({
-    from: startOfMonth(subMonths(new Date(), 1)),
-    to: endOfMonth(subMonths(new Date(), 1))
+    from: subMonths(startOfDay(new Date()), 1),
+    to: endOfDay(new Date())
   })
+
+  const queryObj = React.useMemo(() => ({
+    fromDate: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+    toDate: date?.to ? format(date.to, 'yyyy-MM-dd') : '',
+    bucketBy: timeRange
+  }), [date, timeRange])
+
+  const dateRangeQueryObj = React.useMemo(() => ({
+    fromDate: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+    toDate: date?.to ? format(date.to, 'yyyy-MM-dd') : ''
+  }), [date])
+
+  const {
+    newCustomerCount,
+    repeatCustomerCount,
+    visitFrequency,
+    customersBucket,
+    repeatCustomersBucket,
+    isLoading
+  } = useCustomerAnalytics(queryObj, dateRangeQueryObj)
+
+  const chartData = React.useMemo(() => {
+    // Generate default data if no date range
+    if (!date?.from || !date?.to) {
+      const today = moment();
+      return Array(7).fill(0).map((_, i) => ({
+        date: today.clone().subtract(i, 'days').format('YYYY-MM-DD'),
+        newCustomers: 0,
+        repeatCustomers: 0
+      })).reverse();
+    }
+
+    const dates: string[] = [];
+    const start = moment(date.from);
+    const end = moment(date.to);
+    let current = start.clone();
+
+    // First generate all dates in the range
+    if (timeRange === DateBucketEnum.QUARTER) {
+      const startQ = moment(date.from).startOf('quarter');
+      const endQ = moment(date.to).endOf('quarter');
+      let currentQ = startQ.clone();
+
+      while (currentQ.isSameOrBefore(endQ)) {
+        dates.push(currentQ.format('YYYY-[Q]Q'));
+        currentQ.add(1, 'quarters');
+      }
+    } else {
+      while (current.isSameOrBefore(end)) {
+        let dateKey: string;
+        switch (timeRange) {
+          case DateBucketEnum.DAY:
+            dateKey = current.format('YYYY-MM-DD');
+            current.add(1, 'days');
+            break;
+          case DateBucketEnum.WEEK:
+            dateKey = current.startOf('isoWeek').format('YYYY-MM-DD');
+            current.add(1, 'weeks');
+            break;
+          case DateBucketEnum.MONTH:
+            dateKey = current.format('YYYY-MM');
+            current.add(1, 'months');
+            break;
+          case DateBucketEnum.YEAR:
+            dateKey = current.format('YYYY');
+            current.add(1, 'years');
+            break;
+          default:
+            dateKey = current.format('YYYY-MM-DD');
+            current.add(1, 'days');
+        }
+        dates.push(dateKey);
+      }
+    }
+
+    // Ensure we have at least one date
+    if (dates.length === 0) {
+      dates.push(moment(date.from).format('YYYY-MM-DD'));
+    }
+
+    // Create data maps with default zero values for all dates
+    const dataMap = new Map(dates.map(date => [date, {
+      date,
+      newCustomers: 0,
+      repeatCustomers: 0
+    }]));
+
+    // Update with actual data if available
+    if (customersBucket?.length) {
+      customersBucket.forEach((item: any) => {
+        const key = item.dateBucketKey;
+        const existing = dataMap.get(key);
+        if (existing) {
+          existing.newCustomers = item.customerCount || 0;
+        }
+      });
+    }
+
+    if (repeatCustomersBucket?.length) {
+      repeatCustomersBucket.forEach((item: any) => {
+        const key = item.dateBucketKey;
+        const existing = dataMap.get(key);
+        if (existing) {
+          existing.repeatCustomers = item.customerCount || 0;
+        }
+      });
+    }
+
+    // Convert map to array and ensure it's sorted by date
+    const result = Array.from(dataMap.values()).sort((a, b) => {
+      if (timeRange === DateBucketEnum.QUARTER) {
+        return moment(a.date, 'YYYY-[Q]Q').valueOf() - moment(b.date, 'YYYY-[Q]Q').valueOf();
+      }
+      return moment(a.date).valueOf() - moment(b.date).valueOf();
+    });
+
+    console.log('Chart Data:', result); // Debug log
+    return result;
+  }, [customersBucket, repeatCustomersBucket, date, timeRange]);
+
+  // Update Y-axis domain based on actual data
+  const maxValue = React.useMemo(() => {
+    if (!chartData?.length) return 1;
+    const max = Math.max(
+      ...chartData.map(d => Math.max(d.newCustomers, d.repeatCustomers))
+    );
+    return max === 0 ? 1 : max;
+  }, [chartData]);
 
   const handleQuickSelect = (option: typeof quickSelectOptions[0]) => {
     const newDate = option.getValue()
     setDate(newDate)
+  }
+
+  if (isLoading) {
+    return <Loader />
   }
 
   return (
@@ -106,7 +236,7 @@ export default function CustomersReportPage() {
             <h3 className="text-lg font-medium">Total Customers</h3>
             <span className="text-sm">(All Time)</span>
           </div>
-          <div className="text-4xl font-bold">9</div>
+          <div className="text-4xl font-bold">{newCustomerCount + repeatCustomerCount}</div>
         </div>
 
         <div className="bg-blue-600 text-white rounded-lg p-6">
@@ -114,7 +244,7 @@ export default function CustomersReportPage() {
             <h3 className="text-lg font-medium">Average Visit Frequency</h3>
             <span className="text-sm">(All Time)</span>
           </div>
-          <div className="text-4xl font-bold">0.00</div>
+          <div className="text-4xl font-bold">{visitFrequency.toFixed(2)}</div>
         </div>
       </div>
 
@@ -177,15 +307,15 @@ export default function CustomersReportPage() {
         <div className="grid grid-cols-3 gap-8 mb-8">
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">New Customers</div>
-            <div className="text-2xl font-semibold">0</div>
+            <div className="text-2xl font-semibold">{newCustomerCount}</div>
           </div>
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">Repeat Customers</div>
-            <div className="text-2xl font-semibold">0</div>
+            <div className="text-2xl font-semibold">{repeatCustomerCount}</div>
           </div>
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">Average Visit Frequency</div>
-            <div className="text-2xl font-semibold">0.00</div>
+            <div className="text-2xl font-semibold">{visitFrequency.toFixed(2)}</div>
           </div>
         </div>
 
@@ -194,7 +324,7 @@ export default function CustomersReportPage() {
           <div className="absolute top-0 right-0 z-10">
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+              onChange={(e) => setTimeRange(e.target.value as DateBucketEnum)}
               className="border rounded-md px-3 py-1.5 text-sm bg-white cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {timeRangeOptions.map((option) => (
@@ -204,26 +334,61 @@ export default function CustomersReportPage() {
               ))}
             </select>
           </div>
-          <div className="mt-12">
+          <div className="mt-12 h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  tickFormatter={(date: string) => new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })}
+                  tickFormatter={(date: string) => {
+                    if (timeRange === DateBucketEnum.QUARTER) {
+                      return date;
+                    }
+                    if (timeRange === DateBucketEnum.MONTH) {
+                      return moment(date).format('MMM YY');
+                    }
+                    if (timeRange === DateBucketEnum.YEAR) {
+                      return date;
+                    }
+                    return moment(date).format('MM/DD');
+                  }}
                 />
-                <YAxis yAxisId="left" orientation="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Line
+                <YAxis 
+                  yAxisId="left" 
+                  orientation="left"
+                  tickCount={3}
+                  domain={[0, maxValue]}
+                  allowDecimals={false}
+                />
+                <YAxis 
+                  yAxisId="right" 
+                  orientation="right"
+                  tickCount={3}
+                  domain={[0, maxValue]}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  labelFormatter={(date: string) => {
+                    if (timeRange === DateBucketEnum.QUARTER) {
+                      return date;
+                    }
+                    if (timeRange === DateBucketEnum.MONTH) {
+                      return moment(date).format('MMMM YYYY');
+                    }
+                    if (timeRange === DateBucketEnum.YEAR) {
+                      return date;
+                    }
+                    return moment(date).format('MMM DD, YYYY');
+                  }}
+                  formatter={(value: number) => value}
+                />
+                <Bar
                   yAxisId="left"
-                  type="monotone"
                   dataKey="newCustomers"
                   name="New Customers"
-                  stroke="#2563EB"
-                  strokeWidth={2}
-                  dot={{ fill: '#2563EB', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  fill="#2563EB"
+                  barSize={20}
+                  isAnimationActive={false}
                 />
                 <Line
                   yAxisId="right"
@@ -234,8 +399,9 @@ export default function CustomersReportPage() {
                   strokeWidth={2}
                   dot={{ fill: '#9CA3AF', r: 4 }}
                   activeDot={{ r: 6 }}
+                  isAnimationActive={false}
                 />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
