@@ -284,11 +284,11 @@ export default function SalesReportPage() {
 
         {/* Chart */}
         <div className="relative h-[400px]">
-          <div className="absolute top-0 right-0">
+          <div className="absolute top-0 right-0 z-10">
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value as DateBucketEnum)}
-              className="border rounded-md px-3 py-1.5 text-sm bg-white"
+              className="border rounded-md px-3 py-1.5 text-sm bg-white cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {timeRangeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
