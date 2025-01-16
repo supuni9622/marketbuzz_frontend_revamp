@@ -16,28 +16,24 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useSalesAnalytics } from '@/contexts/SalesAnalyticsContext'
+import { Loader } from '@/components/common/Loader'
+import moment from 'moment'
 
-interface SalesData {
-  date: string
-  sales: number
-  transactions: number
+enum DateBucketEnum {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+  QUARTER = 'quarter',
+  YEAR = 'year'
 }
 
-const data: SalesData[] = [
-  { date: '2024-08-26', sales: 0, transactions: 0 },
-  { date: '2024-09-02', sales: 0, transactions: 0 },
-  { date: '2024-09-09', sales: 0, transactions: 0 },
-  { date: '2024-09-16', sales: 0, transactions: 0 },
-  { date: '2024-09-23', sales: 76, transactions: 5 },
-  { date: '2024-09-30', sales: 0, transactions: 0 },
-]
-
 const timeRangeOptions = [
-  { value: 'days', label: 'Days' },
-  { value: 'weeks', label: 'Weeks' },
-  { value: 'months', label: 'Months' },
-  { value: 'quarters', label: 'Quarters' },
-  { value: 'years', label: 'Years' },
+  { value: DateBucketEnum.DAY, label: 'Daily' },
+  { value: DateBucketEnum.WEEK, label: 'Weekly' },
+  { value: DateBucketEnum.MONTH, label: 'Monthly' },
+  { value: DateBucketEnum.QUARTER, label: 'Quarters' },
+  { value: DateBucketEnum.YEAR, label: 'Yearly' },
 ]
 
 const quickSelectOptions = [
@@ -86,15 +82,100 @@ const quickSelectOptions = [
 ]
 
 export default function SalesReportPage() {
-  const [timeRange, setTimeRange] = React.useState('weeks')
+  const [timeRange, setTimeRange] = React.useState(DateBucketEnum.WEEK)
   const [date, setDate] = React.useState<DateRange | undefined>({
-    from: startOfMonth(subMonths(new Date(), 1)),
-    to: endOfMonth(subMonths(new Date(), 1))
+    from: subMonths(startOfDay(new Date()), 1),
+    to: endOfDay(new Date())
   })
+
+  const queryObj = React.useMemo(() => ({
+    fromDate: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+    toDate: date?.to ? format(date.to, 'yyyy-MM-dd') : '',
+    bucketBy: timeRange
+  }), [date, timeRange])
+
+  const dateRangeQueryObj = React.useMemo(() => ({
+    fromDate: date?.from ? format(date.from, 'yyyy-MM-dd') : '',
+    toDate: date?.to ? format(date.to, 'yyyy-MM-dd') : ''
+  }), [date])
+
+  const {
+    totalSales,
+    totalTransactions,
+    periodSales,
+    periodTransactions,
+    averageSales,
+    salesBucket,
+    isLoading
+  } = useSalesAnalytics(queryObj, dateRangeQueryObj)
+
+  const chartData = React.useMemo(() => {
+    if (!date?.from || !salesBucket) return [];
+
+    // Get all dates between start and end
+    const dates = [];
+    const currentDate = moment(date.from);
+    const endDate = moment(date.to);
+
+    while (currentDate.isSameOrBefore(endDate)) {
+      if (timeRange === DateBucketEnum.QUARTER) {
+        dates.push(`${currentDate.format('YYYY')}-Q${currentDate.quarter()}`);
+        currentDate.add(1, 'quarter');
+      } else if (timeRange === DateBucketEnum.MONTH) {
+        dates.push(currentDate.format('YYYY-MM-DD'));
+        currentDate.add(1, 'month');
+      } else if (timeRange === DateBucketEnum.WEEK) {
+        dates.push(currentDate.format('YYYY-MM-DD'));
+        currentDate.add(1, 'week');
+      } else if (timeRange === DateBucketEnum.YEAR) {
+        dates.push(currentDate.format('YYYY'));
+        currentDate.add(1, 'year');
+      } else {
+        dates.push(currentDate.format('YYYY-MM-DD'));
+        currentDate.add(1, 'day');
+      }
+    }
+
+    // Ensure we have at least one date
+    if (dates.length === 0) {
+      dates.push(moment(date.from).format('YYYY-MM-DD'));
+    }
+
+    // Create data map with default zero values for all dates
+    const dataMap = new Map(dates.map(date => [date, {
+      date,
+      sales: 0,
+      transactions: 0
+    }]));
+
+    // Update with actual data if available
+    if (salesBucket?.length) {
+      salesBucket.forEach((item: any) => {
+        const key = item.dateBucketKey;
+        const existing = dataMap.get(key);
+        if (existing) {
+          existing.sales = item.sum || 0;
+          existing.transactions = item.count || 0;
+        }
+      });
+    }
+
+    // Convert map to array and ensure it's sorted by date
+    return Array.from(dataMap.values()).sort((a, b) => {
+      if (timeRange === DateBucketEnum.QUARTER) {
+        return moment(a.date, 'YYYY-[Q]Q').valueOf() - moment(b.date, 'YYYY-[Q]Q').valueOf();
+      }
+      return moment(a.date).valueOf() - moment(b.date).valueOf();
+    });
+  }, [salesBucket, date, timeRange]);
 
   const handleQuickSelect = (option: typeof quickSelectOptions[0]) => {
     const newDate = option.getValue()
     setDate(newDate)
+  }
+
+  if (isLoading) {
+    return <Loader />
   }
 
   return (
@@ -106,7 +187,7 @@ export default function SalesReportPage() {
             <h3 className="text-lg font-medium">Total Sales</h3>
             <span className="text-sm">(All Time)</span>
           </div>
-          <div className="text-4xl font-bold">$76.0</div>
+          <div className="text-4xl font-bold">${totalSales.toFixed(2)}</div>
         </div>
 
         <div className="bg-blue-600 text-white rounded-lg p-6">
@@ -114,7 +195,7 @@ export default function SalesReportPage() {
             <h3 className="text-lg font-medium">Total Transaction Count</h3>
             <span className="text-sm">(All Time)</span>
           </div>
-          <div className="text-4xl font-bold">5</div>
+          <div className="text-4xl font-bold">{totalTransactions}</div>
         </div>
       </div>
 
@@ -176,16 +257,16 @@ export default function SalesReportPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-6">Sales Summary</h3>
         <div className="grid grid-cols-3 gap-8 mb-8">
           <div>
-            <div className="text-sm font-medium text-gray-500 mb-1">Sales</div>
-            <div className="text-2xl font-semibold">$ 76.0</div>
+            <div className="text-sm font-medium text-gray-500 mb-1">Period Sales</div>
+            <div className="text-2xl font-semibold">$ {periodSales.toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-sm font-medium text-gray-500 mb-1">Transactions</div>
-            <div className="text-2xl font-semibold">5.0</div>
+            <div className="text-sm font-medium text-gray-500 mb-1">Period Transactions</div>
+            <div className="text-2xl font-semibold">{periodTransactions}</div>
           </div>
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">Avg. Sales</div>
-            <div className="text-2xl font-semibold">$ 15.20</div>
+            <div className="text-2xl font-semibold">$ {averageSales.toFixed(2)}</div>
           </div>
         </div>
 
@@ -194,7 +275,7 @@ export default function SalesReportPage() {
           <div className="absolute top-0 right-0">
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+              onChange={(e) => setTimeRange(e.target.value as DateBucketEnum)}
               className="border rounded-md px-3 py-1.5 text-sm bg-white"
             >
               {timeRangeOptions.map((option) => (
@@ -205,19 +286,45 @@ export default function SalesReportPage() {
             </select>
           </div>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="date" 
-                tickFormatter={(date: string) => new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })}
+                tickFormatter={(date: string) => {
+                  if (timeRange === DateBucketEnum.QUARTER) {
+                    return date;
+                  }
+                  if (timeRange === DateBucketEnum.MONTH) {
+                    return moment(date).format('MMM YY');
+                  }
+                  if (timeRange === DateBucketEnum.YEAR) {
+                    return date;
+                  }
+                  return moment(date).format('MM/DD');
+                }}
               />
               <YAxis yAxisId="left" orientation="left" />
               <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
+              <Tooltip 
+                labelFormatter={(date: string) => {
+                  if (timeRange === DateBucketEnum.QUARTER) {
+                    return date;
+                  }
+                  if (timeRange === DateBucketEnum.MONTH) {
+                    return moment(date).format('MMMM YYYY');
+                  }
+                  if (timeRange === DateBucketEnum.YEAR) {
+                    return date;
+                  }
+                  return moment(date).format('MMM DD, YYYY');
+                }}
+                formatter={(value: number) => value}
+              />
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="sales"
+                name="Sales"
                 stroke="#2563EB"
                 strokeWidth={2}
                 dot={{ fill: '#2563EB', r: 4 }}
@@ -227,6 +334,7 @@ export default function SalesReportPage() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="transactions"
+                name="Transactions"
                 stroke="#9CA3AF"
                 strokeWidth={2}
                 dot={{ fill: '#9CA3AF', r: 4 }}
