@@ -102,7 +102,10 @@ export default function SalesReportPage() {
   const {
     totalSales,
     totalTransactions,
+    totalSalesComparison,
+    totalTransactionsComparison,
     periodSales,
+    periodSalesComparison,
     periodTransactions,
     averageSales,
     salesBucket,
@@ -144,18 +147,18 @@ export default function SalesReportPage() {
     // Create data map with default zero values for all dates
     const dataMap = new Map(dates.map(date => [date, {
       date,
-      sales: 0,
+      amount: 0,
       transactions: 0
     }]));
 
     // Update with actual data if available
     if (salesBucket?.length) {
-      salesBucket.forEach((item: any) => {
+      salesBucket.forEach((item) => {
         const key = item.dateBucketKey;
         const existing = dataMap.get(key);
         if (existing) {
-          existing.sales = item.sum || 0;
-          existing.transactions = item.count || 0;
+          existing.amount = item.totalAmount || 0;
+          existing.transactions = item.transactionCount || 0;
         }
       });
     }
@@ -188,6 +191,9 @@ export default function SalesReportPage() {
             <span className="text-sm">(All Time)</span>
           </div>
           <div className="text-4xl font-bold">${totalSales.toFixed(2)}</div>
+          <div className="mt-2 text-sm">
+            {totalSalesComparison > 0 ? '+' : ''}{totalSalesComparison.toFixed(1)}% vs previous period
+          </div>
         </div>
 
         <div className="bg-blue-600 text-white rounded-lg p-6">
@@ -196,6 +202,9 @@ export default function SalesReportPage() {
             <span className="text-sm">(All Time)</span>
           </div>
           <div className="text-4xl font-bold">{totalTransactions}</div>
+          <div className="mt-2 text-sm">
+            {totalTransactionsComparison > 0 ? '+' : ''}{totalTransactionsComparison.toFixed(1)}% vs previous period
+          </div>
         </div>
       </div>
 
@@ -259,13 +268,16 @@ export default function SalesReportPage() {
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">Period Sales</div>
             <div className="text-2xl font-semibold">$ {periodSales.toFixed(2)}</div>
+            <div className="mt-1 text-sm text-gray-500">
+              {periodSalesComparison > 0 ? '+' : ''}{periodSalesComparison.toFixed(1)}% vs previous period
+            </div>
           </div>
           <div>
             <div className="text-sm font-medium text-gray-500 mb-1">Period Transactions</div>
             <div className="text-2xl font-semibold">{periodTransactions}</div>
           </div>
           <div>
-            <div className="text-sm font-medium text-gray-500 mb-1">Avg. Sales</div>
+            <div className="text-sm font-medium text-gray-500 mb-1">Avg. Transaction Amount</div>
             <div className="text-2xl font-semibold">$ {averageSales.toFixed(2)}</div>
           </div>
         </div>
@@ -323,8 +335,8 @@ export default function SalesReportPage() {
               <Line
                 yAxisId="left"
                 type="monotone"
-                dataKey="sales"
-                name="Sales"
+                dataKey="amount"
+                name="Sales Amount"
                 stroke="#2563EB"
                 strokeWidth={2}
                 dot={{ fill: '#2563EB', r: 4 }}

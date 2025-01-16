@@ -54,13 +54,26 @@ export function useSalesAnalytics(
   });
 
   return {
+    // Total metrics
     totalSales: totalSalesData?.sum || 0,
     totalTransactions: totalTransactionsData?.count || 0,
+    totalSalesComparison: totalSalesData?.comparisonPercentage || 0,
+    totalTransactionsComparison: totalTransactionsData?.comparisonPercentage || 0,
+    
+    // Period metrics
     periodSales: periodSalesData?.sum || 0,
-    periodTransactions: salesBucket?.length || 0,
-    averageSales: periodSalesData?.sum && salesBucket?.length ? 
-      periodSalesData.sum / salesBucket.length : 0,
+    periodSalesComparison: periodSalesData?.comparisonPercentage || 0,
+    periodTransactions: salesBucket?.reduce((acc, curr) => acc + curr.transactionCount, 0) || 0,
+    periodAmount: salesBucket?.reduce((acc, curr) => acc + curr.totalAmount, 0) || 0,
+    
+    // Average metrics
+    averageSales: salesBucket?.length ? 
+      (salesBucket.reduce((acc, curr) => acc + curr.totalAmount, 0) / salesBucket.reduce((acc, curr) => acc + curr.transactionCount, 0)) : 0,
+    
+    // Chart data
     salesBucket: salesBucket || [],
+    
+    // Loading state
     isLoading: isLoadingTotalSales || isLoadingTotalTransactions || isLoadingPeriodSales || isLoadingSalesBucket
   };
 } 
