@@ -1,18 +1,76 @@
-interface LoginEventProps {
-  organizationId?: string;
-  role?: string;
+import TagManager from "react-gtm-module";
+import { GTM } from "@/constants";
+
+interface GTMEvent {
+  event: string;
+  params?: object;
 }
 
-const GTMService = {
-  loginEvent: ({ organizationId, role }: LoginEventProps) => {
-    if (typeof window !== 'undefined' && (window as any).dataLayer) {
-      (window as any).dataLayer.push({
-        event: 'login',
-        organizationId,
-        role,
-      });
-    }
-  },
-};
+interface GTMAuthEvent {
+  //Login and Logout
+  organizationId: string;
+  role: string;
+}
 
-export default GTMService; 
+interface GTMUserProfileUpdateEvent {
+  organizationId: string;
+  name: string;
+  country: string;
+  timeZone: string;
+  status: string;
+  createdOn: Date;
+  featureList?: string;
+  credits?: number;
+  address?: {
+    address1: string;
+    city: string;
+    country: string;
+    state: string;
+    zip: string;
+  };
+  phoneNumber?: string;
+  employeesCount?: number;
+  isBillable?: boolean;
+  ownerDetails?: {
+    name: string;
+    email: string;
+  };
+}
+
+interface GTMCampaignEvent {
+  campaignId: string;
+  campaignName: string;
+  campaignType: string;
+  campaignChannel: string;
+  campaignCreatedOn: Date;
+  campaignActualCost?: number;
+}
+
+class GTMService {
+  public static createGTMEvent({ event, params = {} }: GTMEvent) {
+    TagManager.dataLayer({
+      dataLayer: {
+        event: event,
+        ...params
+      }
+    });
+  }
+
+  public static loginEvent(params: GTMAuthEvent) {
+    this.createGTMEvent({ event: GTM.events.loginEvent, params });
+  }
+
+  public static logoutEvent(params: GTMAuthEvent) {
+    this.createGTMEvent({ event: GTM.events.logoutEvent, params });
+  }
+
+  public static userProfileUpdateEvent(params: GTMUserProfileUpdateEvent) {
+    this.createGTMEvent({ event: GTM.events.userProfileUpdateEvent, params });
+  }
+
+  public static campaignCreatedEvent(params: GTMCampaignEvent) {
+    this.createGTMEvent({ event: GTM.events.campaignCreatedEvent, params });
+  }
+}
+
+export default GTMService;

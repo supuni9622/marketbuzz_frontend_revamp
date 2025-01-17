@@ -15,3 +15,15 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   USER = 'USER'
 } 
+
+export enum WebsocketMessageAction { //TODO: Need to refer from types. For some reason, it gives an error at the moment
+  GET_SYNC_PROGRESS = "GET_SYNC_PROGRESS"
+}
+export const GTM = {
+  events: {
+    loginEvent: "loginEvent",
+    logoutEvent: "logoutEvent",
+    userProfileUpdateEvent: "userProfileUpdateEvent",
+    campaignCreatedEvent: "campaignCreatedEvent"
+  }
+};

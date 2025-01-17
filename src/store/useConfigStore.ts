@@ -1,23 +1,41 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
+import {
+  TCloverAppsSchemaWithoutAppSecret
+} from "@shoutout-labs/market_buzz_crm_types";
 
-interface Package {
-  packageId: string
-  name: string
-  amount: number
-  interval: string
-  credits?: number
+enum Features {
+  ANALYTICS = 'ANALYTICS',
+  CRM = 'CRM'
 }
 
-interface Config {
-  packages: Package[]
-}
+const defaultCloverAppConfig: TCloverAppsSchemaWithoutAppSecret = {
+  features: [Features.CRM, Features.ANALYTICS],
+  hasSubscriptionPackages: false,
+  legacySubscriptionJobEnabled: false,
+  appName: "Market Buzz",
+  logo: "",
+  primaryColor: "#128f8b",
+  primaryHoverColor: "#0f7a76",
+  secondaryColor: "#878a99",
+  packages: []
+};
 
-interface ConfigStore {
-  config: Config | null
-  setConfig: (config: Config) => void
-}
+interface ConfigStore  {
+  config: TCloverAppsSchemaWithoutAppSecret;
+  setConfig: (config: TCloverAppsSchemaWithoutAppSecret) => void;
+  isLoadingConfigData: boolean;
+  setIsLoadingConfigData: (isLoadingConfigData: boolean) => void;
+};
 
 export const useConfigStore = create<ConfigStore>((set) => ({
-  config: null,
-  setConfig: (config) => set({ config })
-})) 
+  config: defaultCloverAppConfig,
+  setConfig: (config: TCloverAppsSchemaWithoutAppSecret) =>
+    set(() => ({
+      config
+    })),
+  isLoadingConfigData: false,
+  setIsLoadingConfigData: (isLoadingConfigData: boolean) =>
+    set(() => ({
+      isLoadingConfigData
+    }))
+}));

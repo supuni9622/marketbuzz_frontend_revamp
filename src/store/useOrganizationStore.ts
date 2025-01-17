@@ -1,24 +1,33 @@
-import { create } from 'zustand'
-
-interface Organization {
-  referenceId: string
-  appReferenceId: string
-}
+import { create } from 'zustand';
+import {
+  TWebsocketSyncDataResponse,
+  TOrganizationModelJSON
+} from "@shoutout-labs/market_buzz_crm_types";
 
 interface OrganizationStore {
-  organization: Organization | null
-  credits: number
-  dollarValue: number
-  setOrganization: (organization: Organization) => void
-  setCredits: (credits: number) => void
-  setDollarValue: (dollarValue: number) => void
+   credits: number;
+  setCredits: (credits: number) => void;
+  dollarValue: number;
+  setDollarValue: (dollarValue: number) => void;
+  organization: TOrganizationModelJSON;
+  setOrganization: (organization: TOrganizationModelJSON) => void;
+  syncDataResponse: TWebsocketSyncDataResponse;
+  setSyncDataResponse: (syncDataResponse: TWebsocketSyncDataResponse) => void;
 }
 
 export const useOrganizationStore = create<OrganizationStore>((set) => ({
-  organization: null,
   credits: 0,
+  setCredits: (credits: number) => set({ credits }),
   dollarValue: 0,
-  setOrganization: (organization) => set({ organization }),
-  setCredits: (credits) => set({ credits }),
-  setDollarValue: (dollarValue) => set({ dollarValue })
-})) 
+  setDollarValue: (dollarValue: number) => set({ dollarValue }),
+  organization: {} as TOrganizationModelJSON,
+  setOrganization: (organization: TOrganizationModelJSON) =>
+    set(() => ({
+      organization
+    })),
+  syncDataResponse: { customer: 0, orders: 0 } as TWebsocketSyncDataResponse,
+  setSyncDataResponse: (syncDataResponse: TWebsocketSyncDataResponse) =>
+    set(() => ({
+      syncDataResponse
+    }))
+}));

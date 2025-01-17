@@ -4,7 +4,9 @@ import { Inter } from "next/font/google"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ToastContainer } from "react-toastify"
 import { usePathname } from 'next/navigation'
-import AuthProvider from "@/providers/AuthProvider"
+import AuthProvider from "@/providers/AuthProvider";
+import OrganizationProvider from "@/providers/OrganizationProvider";
+import ConfigProvider from "@/providers/ConfigProvider";
 import { MainLayout } from "@/components/layout/MainLayout"
 import "./globals.css"
 import "react-toastify/dist/ReactToastify.css"
@@ -35,11 +37,18 @@ export default function RootLayout({
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+         
+
             {isBasicView ? children : (
-              <MainLayout>
-                {children}
-              </MainLayout>
+               <ConfigProvider>
+                <OrganizationProvider>
+                  <MainLayout>
+                    {children}
+                  </MainLayout>
+                </OrganizationProvider>
+              </ConfigProvider>
             )}
+           
           </AuthProvider>
         </QueryClientProvider>
         <ToastContainer />
