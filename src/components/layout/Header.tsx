@@ -4,9 +4,12 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { CreditCard, ChevronDown } from 'lucide-react';
+import { useOrganizationStore } from '@/store/useOrganizationStore';
 
 export function Header() {
   const router = useRouter();
+  const { credits } = useOrganizationStore()
+
 
   const handleBuyCredits = () => {
     router.push('/billing');
@@ -18,7 +21,7 @@ export function Header() {
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
             <CreditCard className="h-5 w-5 text-gray-400" />
-            <span className="text-sm font-medium text-gray-700">10,262 Credits</span>
+            <span className="text-sm font-medium text-gray-700">{credits} Buzz Credits</span>
             <button 
               onClick={handleBuyCredits}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"

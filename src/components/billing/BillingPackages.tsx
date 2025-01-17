@@ -28,11 +28,11 @@ export function BillingPackages() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {packages.map((pkg) => (
-            <Card key={pkg.packageId} className="border-primary">
+            <Card key={pkg.packageId.toString()} className="border-primary">
               <CardContent className="p-6">
                 <h4 className="text-xl font-semibold mb-2">{pkg.name}</h4>
                 <div className="font-medium">
-                  ${(pkg.amount / 100).toFixed(2)} ({pkg.interval?.toLowerCase()})
+                  ${((pkg.amount ?? 0) / 100).toFixed(2)} ({pkg.interval?.toLowerCase()})
                 </div>
                 {pkg.credits && (
                   <div className="text-gray-600 mt-1">{pkg.credits} credits</div>
