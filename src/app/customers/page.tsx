@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input';
 import { useCustomers } from '@/contexts/CustomerDataContext';
 import { RefreshCw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function CustomersPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -31,9 +38,41 @@ export default function CustomersPage() {
     { name: 'Inactive Customers', count: 1 }
   ];
 
+  const moreSegments = [
+    { value: 'visits=2', label: 'visits=2' },
+    { value: 'visits=1', label: 'visits=1' },
+    { value: 'test-group', label: 'Test group' },
+    { value: 'last-activity-6-months', label: 'Last activity 6 months' },
+    { value: 'visits2', label: 'Visits2' },
+    { value: 'pradeep', label: 'Pradeep' },
+    { value: 'fv-customers', label: 'FV Customers' },
+    { value: 'anjali-test-now', label: 'Anjali Test Now' },
+    { value: 'anja', label: 'Anja' },
+    { value: 'anj-test', label: 'Anj Test' },
+    { value: 'no-visits', label: 'No visits' },
+    { value: 'not-anjali', label: 'Not Anjali' },
+    { value: 'not-madura', label: 'Not Madura' },
+    { value: 'thamindu', label: 'Thamindu' },
+    { value: 'apeksha', label: 'Apeksha' }
+  ];
+
   return (
     <div className="p-6 space-y-6">
-    
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">CUSTOMERS LIST</h2>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm">Buzz Credits</span>
+            <span className="font-medium">10240</span>
+          </div>
+          <Button className="bg-blue-600 hover:bg-blue-500">Buy Credits</Button>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm">Supuni924</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Segments */}
       <div className="flex space-x-4">
         {segments.map((segment) => (
           <button
@@ -49,9 +88,18 @@ export default function CustomersPage() {
             {segment.name} <span className="ml-2 text-xs">{segment.count}</span>
           </button>
         ))}
-        <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">
-          + More Segments
-        </button>
+        <Select>
+          <SelectTrigger className="w-[180px] bg-gray-100 text-gray-600 hover:bg-gray-200 border-0">
+            <SelectValue placeholder="+ More Segments" />
+          </SelectTrigger>
+          <SelectContent>
+            {moreSegments.map((segment) => (
+              <SelectItem key={segment.value} value={segment.value}>
+                {segment.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Search and Filter */}
