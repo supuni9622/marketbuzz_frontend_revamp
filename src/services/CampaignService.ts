@@ -1,56 +1,50 @@
-import { fetchGet,
+import {
+  fetchGet,
   fetchPost,
   fetchPut,
-  jsonToQueryParam } from "./CommonServiceUtils";
+  jsonToQueryParam
+} from "./CommonServiceUtils";
 import { Constants } from "@/constants";
-import type {
-  GetRequest,
-  GetResponse,
-  CountResponse,
-  CampaignModel,
-  TemplateModel
-} from "@/types/campaign";
-
-const getCampaignTemplates = (
-  queryObj: GetRequest
-): Promise<GetResponse<TemplateModel>> => {
-  // Ensure limit and skip are numbers
-  const params = {
-    limit: Number(queryObj.limit),
-    skip: Number(queryObj.skip),
-    ...(queryObj.type && { type: queryObj.type })
-  };
-  
-  const queryString = jsonToQueryParam(params);
-  return fetchGet(
-    `${Constants.REACT_APP_API_BASE_URL}campaigns/templates?${queryString}`
-  );
-};
+import {
+  TCampaignGetRequest,
+  TCampaignGetResponse,
+  TCampaignCreateRequest,
+  TCampaignCreateResponse,
+  TContentSuggestionRequest,
+  TContentSuggestionResponse,
+  TCampaignsCountResponse,
+  TCampaignUpdateRequest,
+  TCampaignUpdateResponse,
+  TTemplateGetRequest,
+  TTemplateGetResponse
+} from "@shoutout-labs/market_buzz_crm_types";
 
 const getCampaigns = (
-  queryObj: GetRequest
-): Promise<GetResponse<CampaignModel>> => {
-  // Ensure limit and skip are numbers
-  const params = {
-    limit: Number(queryObj.limit),
-    skip: Number(queryObj.skip),
-    ...(queryObj.type && { type: queryObj.type })
-  };
-  
-  const queryString = jsonToQueryParam(params);
+  queryObj: TCampaignGetRequest
+): Promise<TCampaignGetResponse> => {
   return fetchGet(
-    `${Constants.REACT_APP_API_BASE_URL}campaigns?${queryString}`
+    `${Constants.REACT_APP_API_BASE_URL}campaigns?${jsonToQueryParam(queryObj)}`
   );
 };
 
-const getCampaignsCount = (): Promise<CountResponse> => {
+const getCampaignsCount = (): Promise<TCampaignsCountResponse> => {
   return fetchGet(`${Constants.REACT_APP_API_BASE_URL}campaigns/count`);
 };
 
+const createCampaign = async (
+  payload: TCampaignCreateRequest
+): Promise<TCampaignCreateResponse> => {
+  return await fetchPost(
+    `${Constants.REACT_APP_API_BASE_URL}campaigns`,
+    payload
+  );
+
+};
+
 const updateCampaign = async (
-  payload: Partial<CampaignModel>,
+  payload: TCampaignUpdateRequest,
   campaignId: string
-): Promise<CampaignModel> => {
+): Promise<TCampaignUpdateResponse> => {
   return fetchPut(
     `${Constants.REACT_APP_API_BASE_URL}campaigns/${campaignId}`,
     payload
@@ -58,28 +52,27 @@ const updateCampaign = async (
 };
 
 const regenerateContent = (
-  payload: { campaignId: string }
-): Promise<{ content: string }> => {
+  payload: TContentSuggestionRequest
+): Promise<TContentSuggestionResponse> => {
   return fetchPost(
     `${Constants.REACT_APP_API_BASE_URL}campaigns/content-suggesion`,
     payload
   );
 };
 
-const createCampaign = async (
-  payload: Omit<CampaignModel, 'id' | 'createdOn' | 'report'>
-): Promise<CampaignModel> => {
-  return await fetchPost(
-    `${Constants.REACT_APP_API_BASE_URL}campaigns`,
-    payload
+const getTemplates = (
+  queryObj: TTemplateGetRequest
+): Promise<TTemplateGetResponse> => {
+  return fetchGet(
+    `${Constants.REACT_APP_API_BASE_URL}campaigns/templates?${jsonToQueryParam(queryObj)}`
   );
 };
 
-export const CampaignService = {
-  getCampaignTemplates,
+export {
   getCampaigns,
   createCampaign,
   regenerateContent,
   getCampaignsCount,
-  updateCampaign
-}; 
+  updateCampaign,
+  getTemplates
+};

@@ -5,11 +5,12 @@ import { X, RefreshCw } from 'lucide-react'
 import { useCampaignTemplates, useCampaigns } from '@/contexts/CampaignDataContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import type { 
-  CampaignModel,
-  TemplateModel
-} from '@/types/campaign'
 import { format } from 'date-fns'
+import { CampaignCreateModal } from '@/components/campaigns/sms/CampaignCreateModal';
+import {
+  TTemplateModelJSON,
+  TCampaignModelJSON
+} from "@shoutout-labs/market_buzz_crm_types";
 
 // Campaign status enum
 export enum CampaignStatus {
@@ -23,6 +24,7 @@ export default function SMSCampaignsPage() {
   const [activeTab, setActiveTab] = useState('Campaign Ideas')
   const [showBanner, setShowBanner] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const { 
     templates, 
@@ -99,10 +101,19 @@ export default function SMSCampaignsPage() {
         >
           <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
         </Button>
-        <Button className="bg-blue-600 hover:bg-blue-500">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-500"
+          onClick={() => setShowCreateModal(true)}
+        >
           + Create New Campaign
         </Button>
       </div>
+
+      {/* Campaign Create Modal */}
+      <CampaignCreateModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
 
       {/* Tabs */}
       <div className="border-b">
@@ -132,7 +143,7 @@ export default function SMSCampaignsPage() {
           ) : templates?.length === 0 ? (
             <div className="text-center py-8">No templates found.</div>
           ) : (
-            templates?.map((template: TemplateModel) => (
+            templates?.map((template: TTemplateModelJSON) => (
               <div key={template.id} className="border rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
@@ -225,7 +236,7 @@ export default function SMSCampaignsPage() {
                     </td>
                   </tr>
                 ) : (
-                  campaigns?.map((campaign: CampaignModel) => (
+                  campaigns?.map((campaign: TCampaignModelJSON) => (
                     <tr key={campaign.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">

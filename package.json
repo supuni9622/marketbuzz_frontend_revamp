@@ -9,9 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-checkbox": "^1.1.3",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-popover": "^1.1.4",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-tooltip": "^1.1.6",
+    "@react-awesome-query-builder/core": "^6.6.3",
+    "@react-awesome-query-builder/ui": "^6.6.3",
     "@shoutout-labs/market_buzz_crm_types": "^v2.52.1",
     "@shoutout-labs/marketbuzz-constants": "^1.5.0",
     "@shoutout-labs/marketbuzz-utils": "^1.6.0",
@@ -34,24 +40,28 @@
     "react-dom": "^19.0.0",
     "react-gtm-module": "^2.0.11",
     "react-toastify": "^11.0.2",
+    "react-use-websocket": "^4.8.1",
     "recharts": "^2.15.0",
     "shadcn-ui": "^0.9.4",
+    "sonner": "^1.7.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "zustand": "^5.0.2",
-    "react-use-websocket": "^4.8.1"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
     "@types/react-gtm-module": "^2.0.4",
     "eslint": "^9",
     "eslint-config-next": "15.1.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "mongoose": "^8.7.2"
   }
 }
