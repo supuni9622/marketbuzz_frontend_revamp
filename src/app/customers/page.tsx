@@ -13,12 +13,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { Utility } from "@/utility/Utility";
+import numeral from "numeral";
+import { CustomerDetailsPanel } from '@/components/customers/CustomerDetailsPanel';
+import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types';
 
 export default function CustomersPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSegment, setActiveSegment] = useState('All Customers');
+  const [selectedCustomer, setSelectedCustomer] = useState<TCustomerModelJSON | null>(null);
 
   const { customers, isLoadingCustomers, refetchCustomersData, isFetchingCustomersData } = useCustomers({
     skip: 0,
@@ -58,21 +63,6 @@ export default function CustomersPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">CUSTOMERS LIST</h2>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm">Buzz Credits</span>
-            <span className="font-medium">10240</span>
-          </div>
-          <Button className="bg-blue-600 hover:bg-blue-500">Buy Credits</Button>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm">Supuni924</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Segments */}
       <div className="flex space-x-4">
         {segments.map((segment) => (
           <button
@@ -145,19 +135,36 @@ export default function CustomersPage() {
               </tr>
             ) : (
               customers?.map((customer) => (
-                <tr key={customer.id} className="border-b hover:bg-gray-50">
+                <tr 
+                  key={customer.id} 
+                  className="border-b hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setSelectedCustomer(customer)}
+                >
                   <td className="px-6 py-4">{customer.firstName}</td>
                   <td className="px-6 py-4">{customer.lastName}</td>
                   <td className="px-6 py-4">{customer.email}</td>
                   <td className="px-6 py-4">{customer.phoneNumber}</td>
-                  <td className="px-6 py-4">${customer.avgSpend || '0.00'}</td>
-                  <td className="px-6 py-4">{customer.visits || 0}</td>
+                  <td className="px-6 py-4">${numeral(
+                        Utility.getAvgSpend(
+                          customer.totalTransactionsCount || 1,
+                          customer.totalTransactionsSum || 0
+                        )
+                      ).format("0.00")}</td>
+                  <td className="px-6 py-4">{customer.totalTransactionsCount || 0}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Customer Details Side Panel */}
+      {selectedCustomer && (
+        <CustomerDetailsPanel
+          customer={selectedCustomer}
+          onClose={() => setSelectedCustomer(null)}
+        />
+      )}
     </div>
   );
 } 

@@ -6,5 +6,12 @@ export class Utility {
       } {
         return jwtDecode(token);
       }
+      public static getAvgSpend = (
+        totalTransactionsCount: number,
+        totalTransactionsSum: number
+      ): number => {
+        const avgSpend = totalTransactionsSum / totalTransactionsCount;
+        return avgSpend;
+      };
 
 }  
