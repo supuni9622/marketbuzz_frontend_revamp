@@ -1,10 +1,13 @@
 'use client'
 
-import { X, Mail, Phone, Calendar, ArrowLeft, ArrowRight } from 'lucide-react'
+import { X, Mail, Phone, Calendar, User2, Clock, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
+import moment from "moment";
+import { Utility } from "@/utility/Utility";
+import numeral from "numeral";
 
 interface CustomerDetailsPanelProps {
   customer: TCustomerModelJSON
@@ -59,20 +62,43 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-8">
-        {/* Contact Information */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-gray-500" />
-            <span>{customer.email || '-'}</span>
+      <div className="p-6 space-y-6">
+        {/* Basic Information */}
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-gray-500" />
+              <span>{customer.email || '-'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <span>{customer.phoneNumber || '-'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span> {customer?.dateOfBirth
+                    ? moment(customer?.dateOfBirth).format("LL")
+                    : "Not available"}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-gray-500" />
-            <span>{customer.phoneNumber || '-'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span>Created On: {format(new Date(customer.createdOn), 'MMMM dd, yyyy')}</span>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <div>
+                <div>Created On</div>
+                <div className="text-sm text-gray-600"> {moment(
+                    customer?.customerCreatedOn ||
+                      customer?.createdOn
+                  ).format("LL")}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <div>
+                <div>Last Activity On</div>
+                <div className="text-sm text-gray-600">{moment(customer?.lastPurchasedDate).format("LL")}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -87,6 +113,23 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
           )}>
             {customer.optIn.marketing.allowed ? 'Allowed' : 'Denied'}
           </span>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <div className="text-sm text-gray-600">Visits</div>
+            <div className="text-2xl font-semibold">{customer?.totalTransactionsCount}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Avg. Spend</div>
+            <div className="text-2xl font-semibold"> ${numeral(
+                        Utility.getAvgSpend(
+                          customer.totalTransactionsCount || 1,
+                          customer.totalTransactionsSum || 0
+                        )
+                      ).format("0.00")}</div>
+          </div>
         </div>
 
         {/* Transactions */}
@@ -106,17 +149,6 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
                 </div>
               </div>
             ))}
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-500">Showing 3 of 3 Results</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon" disabled>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" disabled>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
       </div>
