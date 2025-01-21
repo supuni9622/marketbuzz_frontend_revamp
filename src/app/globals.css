@@ -14,67 +14,96 @@
 }
 
 /* Query Builder Styles */
-.query-builder {
+.qb-lite {
   @apply font-sans;
 }
 
-.query-builder .group {
-  @apply bg-transparent border-none;
+.group {
+  @apply bg-[#fff8f0] border border-[#ffe7cc] rounded-lg p-4;
 }
 
-.query-builder .group--children {
-  @apply ml-6 pl-6 border-l border-gray-200;
+.rule {
+  @apply flex items-center gap-2 py-1;
 }
 
-.query-builder .group--header,
-.query-builder .group--footer {
-  @apply my-2;
+/* Field Select */
+.rule--field select {
+  @apply w-[180px] h-9 px-2 border border-gray-200 rounded-md bg-white text-sm;
 }
 
-.query-builder .rule {
-  @apply p-2 border border-gray-200 rounded-lg bg-white my-1;
+/* Operator Select */
+.rule--operator select {
+  @apply w-[180px] h-9 px-2 border border-gray-200 rounded-md bg-white text-sm;
 }
 
-.query-builder .rule--header {
-  @apply ml-0;
+/* Value Inputs */
+.rule--value .widget--widget input,
+.rule--value .widget--widget select {
+  @apply h-9 px-2 border border-gray-200 rounded-md bg-white text-sm w-[180px];
 }
 
-.query-builder .rule--body {
-  @apply flex gap-2 items-center;
+/* Delete Button */
+.rule--header .rule--delete {
+  @apply text-red-500 hover:text-red-600 ml-2;
 }
 
-.query-builder .rule--field,
-.query-builder .rule--operator,
-.query-builder .rule--value,
-.query-builder .rule--operator-options {
-  @apply inline-block mr-2;
+/* Add Rule Button */
+.group--actions button {
+  @apply text-blue-600 hover:text-blue-700 text-sm;
 }
 
-.query-builder select,
-.query-builder input[type="text"],
-.query-builder input[type="number"],
-.query-builder input[type="date"] {
-  @apply h-9 px-2 border border-gray-200 rounded-md bg-white text-sm min-w-[150px];
-}
-
-.query-builder .group--actions {
-  @apply ml-2;
-}
-
-.query-builder .group--actions button,
-.query-builder .rule--actions button {
-  @apply m-1 px-2 py-1 border border-gray-200 rounded-md bg-white text-xs cursor-pointer hover:bg-gray-50;
-}
-
-.query-builder .rule--actions {
-  @apply ml-auto flex items-center;
-}
-
-.query-builder .rule--actions button {
-  @apply px-1.5 py-0.5 text-xs;
-}
-
-.query-builder .group--drag-handler,
-.query-builder .rule--drag-handler {
+/* AND/OR Buttons */
+.group--conjunctions {
   @apply hidden;
+}
+
+/* Hide drag handlers */
+.group--drag-handler,
+.rule--drag-handler {
+  @apply hidden;
+}
+
+/* Add Group Button */
+.group--actions {
+  @apply flex justify-end mt-2;
+}
+
+/* Delete Group Button */
+.group--actions .group--delete {
+  @apply text-red-500 hover:text-red-600 text-sm;
+}
+
+/* Spacing between rules */
+.group--children {
+  @apply space-y-1;
+}
+
+/* Rule Container */
+.rule--body {
+  @apply flex items-center gap-2;
+}
+
+/* Add rule button styling */
+.query-builder .group--actions button.action--ADD-RULE {
+  @apply text-blue-600 hover:text-blue-700 text-sm font-medium;
+}
+
+/* Delete button styling */
+.query-builder .rule--actions button.action--DELETE {
+  @apply text-red-500 hover:text-red-600;
+}
+
+/* Rule header */
+.rule--header {
+  @apply flex items-center;
+}
+
+/* Value widgets */
+.rule--widget {
+  @apply flex items-center;
+}
+
+/* Field labels */
+.rule select option {
+  @apply text-sm;
 }

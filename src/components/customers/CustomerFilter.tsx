@@ -68,10 +68,8 @@ export function CustomerFilter({
   }, [setCurrentFilters])
 
   const renderBuilder = useCallback((props: BuilderProps) => (
-    <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow">
-        <Builder {...props} className="p-4" />
-      </div>
+    <div className="query-builder-container">
+      <Builder {...props} />
     </div>
   ), [])
 
@@ -93,8 +91,8 @@ export function CustomerFilter({
   }
 
   return (
-    <Card className="p-4 space-y-4">
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <div className="qb-lite">
         <Query
           {...filterConfig}
           value={tree}
@@ -103,21 +101,23 @@ export function CustomerFilter({
         />
       </div>
 
-      <div className="flex justify-end gap-2 mt-4">
+      <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           onClick={handleClear}
           disabled={isLoading}
+          className="text-red-500 hover:text-red-600 border-red-200"
         >
-          Clear
+          Clear Filter
         </Button>
         <Button
           onClick={handleFilter}
           disabled={isLoading}
+          className="bg-blue-600 hover:bg-blue-700"
         >
           Apply Filter
         </Button>
       </div>
-    </Card>
+    </div>
   )
 } 
