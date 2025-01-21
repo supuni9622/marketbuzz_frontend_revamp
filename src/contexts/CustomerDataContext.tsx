@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, ReactNode } from 'react'
+import { createContext, useContext, ReactNode, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types'
 import { CustomerService } from '@/services/CustomerService'
@@ -15,6 +15,8 @@ interface CustomerDataContextType {
   isLoadingCustomers: boolean
   isFetchingCustomersData: boolean
   customersCount: number
+  currentPage: number
+  setCurrentPage: (page: number) => void
   refetchCustomersData: () => Promise<void>
 }
 
@@ -25,17 +27,21 @@ interface CustomerDataProviderProps {
 }
 
 export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const limit = 10
+  const skip = (currentPage - 1) * limit
+
   const {
     data: customers = [],
     isLoading: isLoadingCustomers,
     isFetching: isFetchingCustomersData,
     refetch: refetchCustomers
   } = useQuery({
-    queryKey: [CustomersFilterTasks.FETCH_CUSTOMERS],
+    queryKey: [CustomersFilterTasks.FETCH_CUSTOMERS, currentPage],
     queryFn: async () => {
       const response = await CustomerService.getCustomers({
-        limit: 10,
-        skip: 0
+        limit,
+        skip
       })
       return response.items
     }
@@ -60,6 +66,8 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
         isLoadingCustomers,
         isFetchingCustomersData,
         customersCount,
+        currentPage,
+        setCurrentPage,
         refetchCustomersData
       }}
     >

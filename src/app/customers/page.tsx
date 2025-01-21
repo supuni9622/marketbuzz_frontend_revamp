@@ -20,6 +20,15 @@ import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types';
 import { CustomerFilter } from '@/components/customers/CustomerFilter';
 import { CustomerDataProvider, useCustomerData } from '@/contexts/CustomerDataContext';
 import { filterConfig } from '@/components/customers/CustomersFilterConfig';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 function CustomersContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -36,7 +45,9 @@ function CustomersContent() {
     isLoadingCustomers,
     refetchCustomersData,
     isFetchingCustomersData,
-    customersCount
+    customersCount,
+    currentPage,
+    setCurrentPage
   } = useCustomerData();
 
   const handleRefresh = async () => {
@@ -75,6 +86,41 @@ function CustomersContent() {
     // Handle filter logic here
     console.log('Filtering with:', customerFilters);
   };
+
+  const totalPages = Math.ceil(customersCount / 10)
+  const showEllipsis = totalPages > 7
+
+  const getPageNumbers = () => {
+    const pages = []
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 4) {
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i)
+        }
+        pages.push('ellipsis')
+        pages.push(totalPages)
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1)
+        pages.push('ellipsis')
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        pages.push(1)
+        pages.push('ellipsis')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i)
+        }
+        pages.push('ellipsis')
+        pages.push(totalPages)
+      }
+    }
+    return pages
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -193,6 +239,47 @@ function CustomersContent() {
             )}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {!isLoadingCustomers && customers?.length > 0 && (
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    className={cn("cursor-pointer", currentPage === 1 && "pointer-events-none opacity-50")}
+                  />
+                </PaginationItem>
+
+                {getPageNumbers().map((page, index) => (
+                  page === 'ellipsis' ? (
+                    <PaginationItem key={`ellipsis-${index}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page as number)}
+                        isActive={currentPage === page}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    className={cn("cursor-pointer", currentPage === totalPages && "pointer-events-none opacity-50")}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
 
       {/* Customer Details Side Panel */}
