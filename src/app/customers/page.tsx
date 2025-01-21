@@ -109,12 +109,23 @@ function CustomersContent() {
 
       <div className="flex items-center justify-between">
         <div className="w-1/3">
-          <Input
-            type="search"
-            placeholder="Search customers..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
+          {/* Search and Filter */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-[300px] pl-8"
+            />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
+          <Button onClick={handleRefresh} variant="outline" size="icon" disabled={isRefreshing || isFetchingCustomersData}>
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          </Button>
+        </div>
+      </div>
         </div>
         <Button
           variant="outline"
@@ -135,23 +146,7 @@ function CustomersContent() {
         />
       )}
 
-      {/* Search and Filter */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-[300px] pl-8"
-            />
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
-          <Button onClick={handleRefresh} variant="outline" size="icon" disabled={isRefreshing || isFetchingCustomersData}>
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-          </Button>
-        </div>
-      </div>
+     
 
       {/* Customers Table */}
       <div className="relative overflow-x-auto">

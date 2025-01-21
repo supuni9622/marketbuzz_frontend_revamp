@@ -14,7 +14,7 @@ import {
 } from '@react-awesome-query-builder/ui'
 import { filterConfig } from './CustomersFilterConfig'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Trash2 } from 'lucide-react'
 
 interface CustomerFilterProps {
   isLoading: boolean

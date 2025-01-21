@@ -19,7 +19,7 @@
 }
 
 .group {
-  @apply bg-[#fff8f0] border border-[#ffe7cc] rounded-lg p-4;
+  @apply bg-[#fef9f5] border border-gray-200 rounded-lg p-4;
 }
 
 .rule {
@@ -43,8 +43,15 @@
 }
 
 /* Delete Button */
-.rule--header .rule--delete {
-  @apply text-red-500 hover:text-red-600 ml-2;
+.rule--header button[title="Delete"],
+.group--header button[title="Delete"] {
+  @apply text-red-500 hover:text-red-600 ml-2 p-1 rounded-md hover:bg-red-50;
+}
+
+.rule--header button[title="Delete"]::before,
+.group--header button[title="Delete"]::before {
+  content: "×";
+  @apply text-lg font-medium;
 }
 
 /* Add Rule Button */
@@ -84,12 +91,12 @@
 }
 
 /* Add rule button styling */
-.query-builder .group--actions button.action--ADD-RULE {
+.group--actions button.action--ADD-RULE {
   @apply text-blue-600 hover:text-blue-700 text-sm font-medium;
 }
 
 /* Delete button styling */
-.query-builder .rule--actions button.action--DELETE {
+.rule--actions button.action--DELETE {
   @apply text-red-500 hover:text-red-600;
 }
 
@@ -106,4 +113,10 @@
 /* Field labels */
 .rule select option {
   @apply text-sm;
+}
+
+/* Hide text content of delete buttons */
+.rule--header button[title="Delete"] span,
+.group--header button[title="Delete"] span {
+  @apply hidden;
 }
