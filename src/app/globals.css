@@ -12,3 +12,69 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* Query Builder Styles */
+.query-builder {
+  @apply font-sans;
+}
+
+.query-builder .group {
+  @apply bg-transparent border-none;
+}
+
+.query-builder .group--children {
+  @apply ml-6 pl-6 border-l border-gray-200;
+}
+
+.query-builder .group--header,
+.query-builder .group--footer {
+  @apply my-2;
+}
+
+.query-builder .rule {
+  @apply p-2 border border-gray-200 rounded-lg bg-white my-1;
+}
+
+.query-builder .rule--header {
+  @apply ml-0;
+}
+
+.query-builder .rule--body {
+  @apply flex gap-2 items-center;
+}
+
+.query-builder .rule--field,
+.query-builder .rule--operator,
+.query-builder .rule--value,
+.query-builder .rule--operator-options {
+  @apply inline-block mr-2;
+}
+
+.query-builder select,
+.query-builder input[type="text"],
+.query-builder input[type="number"],
+.query-builder input[type="date"] {
+  @apply h-9 px-2 border border-gray-200 rounded-md bg-white text-sm min-w-[150px];
+}
+
+.query-builder .group--actions {
+  @apply ml-2;
+}
+
+.query-builder .group--actions button,
+.query-builder .rule--actions button {
+  @apply m-1 px-2 py-1 border border-gray-200 rounded-md bg-white text-xs cursor-pointer hover:bg-gray-50;
+}
+
+.query-builder .rule--actions {
+  @apply ml-auto flex items-center;
+}
+
+.query-builder .rule--actions button {
+  @apply px-1.5 py-0.5 text-xs;
+}
+
+.query-builder .group--drag-handler,
+.query-builder .rule--drag-handler {
+  @apply hidden;
+}

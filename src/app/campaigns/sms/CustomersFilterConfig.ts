@@ -4,6 +4,10 @@ import { Utils as QbUtils } from "@react-awesome-query-builder/core";
 
 const InitialConfig = BasicConfig;
 
+const commonTextOperators = ['equal', 'not_equal', 'contains', 'not_contains'];
+const commonNumberOperators = ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal', 'between'];
+const commonDateOperators = ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal', 'between'];
+
 export const filterConfig: Config = {
   ...InitialConfig,
   settings: {
@@ -44,36 +48,45 @@ export const filterConfig: Config = {
   fields: {
     firstName: {
       label: "First Name",
-      type: "text"
+      type: "text",
+      valueSources: ["value"],
+      operators: commonTextOperators
     },
     lastName: {
       label: "Last Name",
-      type: "text"
+      type: "text",
+      valueSources: ["value"],
+      operators: commonTextOperators
     },
     email: {
       label: "Email",
-      type: "text"
+      type: "text",
+      valueSources: ["value"],
+      operators: commonTextOperators
     },
     phoneNumber: {
       label: "Phone Number",
-      type: "text"
+      type: "text",
+      valueSources: ["value"],
+      operators: commonTextOperators
     },
     totalTransactionsCount: {
       label: "Visits",
       type: "number",
-      valueSources: ["value"]
+      valueSources: ["value"],
+      operators: commonNumberOperators
     },
     "optIn.marketing.allowed": {
-      label: "Marketing Allowed",
+      label: "Marketing Permission",
       type: "boolean",
-      operators: ["equal"],
-      valueSources: ["value"]
+      valueSources: ["value"],
+      operators: ["equal"]
     },
     createdOn: {
       label: "Created On",
       type: "date",
-      operators: ["equal", "less", "greater", "between"],
-      valueSources: ["value"]
+      valueSources: ["value"],
+      operators: commonDateOperators
     },
     dateOfBirth: {
       label: "Date of Birth",

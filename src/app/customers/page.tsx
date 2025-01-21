@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useCustomers } from '@/contexts/CustomerDataContext';
 import { RefreshCw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -18,17 +17,27 @@ import { Utility } from "@/utility/Utility";
 import numeral from "numeral";
 import { CustomerDetailsPanel } from '@/components/customers/CustomerDetailsPanel';
 import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types';
+import { CustomerFilter } from '@/components/customers/CustomerFilter';
+import { CustomerDataProvider, useCustomerData } from '@/contexts/CustomerDataContext';
+import { filterConfig } from '@/components/customers/CustomersFilterConfig';
 
-export default function CustomersPage() {
+function CustomersContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSegment, setActiveSegment] = useState('All Customers');
   const [selectedCustomer, setSelectedCustomer] = useState<TCustomerModelJSON | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [isFilterResult, setIsFilterResult] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [searchValue, setSearchValue] = useState("");
 
-  const { customers, isLoadingCustomers, refetchCustomersData, isFetchingCustomersData } = useCustomers({
-    skip: 0,
-    limit: 10
-  });
+  const {
+    customers,
+    isLoadingCustomers,
+    refetchCustomersData,
+    isFetchingCustomersData,
+    customersCount
+  } = useCustomerData();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -61,6 +70,12 @@ export default function CustomersPage() {
     { value: 'apeksha', label: 'Apeksha' }
   ];
 
+  const onFilterCustomers = async (filters: any) => {
+    const customerFilters = Utility.getMongoDBQuery(filters, filterConfig);
+    // Handle filter logic here
+    console.log('Filtering with:', customerFilters);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex space-x-4">
@@ -92,6 +107,34 @@ export default function CustomersPage() {
         </Select>
       </div>
 
+      <div className="flex items-center justify-between">
+        <div className="w-1/3">
+          <Input
+            type="search"
+            placeholder="Search customers..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          {showFilters ? 'Hide Filters' : 'Filter Customers'}
+        </Button>
+      </div>
+
+      {showFilters && (
+        <CustomerFilter
+          isLoading={isLoadingCustomers}
+          setIsFilterResult={setIsFilterResult}
+          onFilterCustomers={onFilterCustomers}
+          currentFilters={currentFilters}
+          setCurrentFilters={setCurrentFilters}
+          handleSegmentCreationSuccess={refetchCustomersData}
+        />
+      )}
+
       {/* Search and Filter */}
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
@@ -108,7 +151,6 @@ export default function CustomersPage() {
             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
           </Button>
         </div>
-        <Button variant="outline">Filter Customers</Button>
       </div>
 
       {/* Customers Table */}
@@ -166,5 +208,13 @@ export default function CustomersPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <CustomerDataProvider>
+      <CustomersContent />
+    </CustomerDataProvider>
   );
 } 
