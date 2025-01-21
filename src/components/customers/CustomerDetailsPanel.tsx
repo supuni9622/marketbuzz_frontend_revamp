@@ -2,43 +2,72 @@
 
 import { X, Mail, Phone, Calendar, User2, Clock, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
-import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types'
-import { cn } from '@/lib/utils';
-import moment from "moment";
-import { Utility } from "@/utility/Utility";
-import numeral from "numeral";
+import { TCustomerModelJSON, TTransactionModelJSON } from '@shoutout-labs/market_buzz_crm_types'
+import { cn } from '@/lib/utils'
+import moment from "moment"
+import { Utility } from "@/utility/Utility"
+import numeral from "numeral"
+import { useState, useEffect, useCallback } from "react"
+import { getTransactions, getTransactionCount } from '@/services/TransactionService'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface CustomerDetailsPanelProps {
   customer: TCustomerModelJSON
   onClose: () => void
 }
 
-interface TransactionType {
-  id: string
-  amount: number
-  date: string
-}
-
 export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanelProps) {
-  // Mock transactions data - replace with actual data
-  const transactions: TransactionType[] = [
-    {
-      id: '66f50d5d917991f9e31be20b',
-      amount: 24,
-      date: '2024-09-26T12:59:31'
-    },
-    {
-      id: '66f50159917991f9e30f7d1f',
-      amount: 10,
-      date: '2024-09-26T12:08:15'
-    },
-    {
-      id: '66f285b3917991f9e30ad9d0',
-      amount: 20,
-      date: '2024-09-24T14:53:27'
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [limit] = useState<number>(5)
+  const [skip, setSkip] = useState<number>(0)
+  const [transactions, setTransactions] = useState<TTransactionModelJSON[]>([])
+  const [totalTransactions, setTotalTransactions] = useState<number>(0)
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const loadTransactionData = useCallback(async () => {
+    if (!customer?.id) return
+    
+    try {
+      setLoading(true)
+      const queryObj = {
+        query: customer.id
+      }
+      const getTransactionsQueryObj = {
+        limit,
+        skip,
+        customerId: customer.id
+      }
+      const [transactionsRes, transactionCountRes] = await Promise.all([
+        getTransactions(getTransactionsQueryObj),
+        getTransactionCount(queryObj)
+      ])
+      setTransactions(transactionsRes.items)
+      setTotalTransactions(transactionCountRes.count)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
-  ]
+  }, [customer?.id, limit, skip])
+
+  useEffect(() => {
+    loadTransactionData()
+  }, [loadTransactionData])
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+    setSkip((newPage - 1) * limit)
+  }
+
+  const totalPages = Math.ceil(totalTransactions / limit)
 
   return (
     <div className="fixed inset-y-0 right-0 w-[600px] bg-white shadow-lg border-l transform transition-transform duration-200 ease-in-out">
@@ -62,7 +91,7 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 h-[calc(100vh-88px)] overflow-y-auto">
         {/* Basic Information */}
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -76,9 +105,9 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span> {customer?.dateOfBirth
-                    ? moment(customer?.dateOfBirth).format("LL")
-                    : "Not available"}</span>
+              <span>{customer?.dateOfBirth
+                ? moment(customer?.dateOfBirth).format("LL")
+                : "Not available"}</span>
             </div>
           </div>
           <div className="space-y-4">
@@ -86,10 +115,10 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
               <Clock className="h-4 w-4 text-gray-500" />
               <div>
                 <div>Created On</div>
-                <div className="text-sm text-gray-600"> {moment(
-                    customer?.customerCreatedOn ||
-                      customer?.createdOn
-                  ).format("LL")}</div>
+                <div className="text-sm text-gray-600">{moment(
+                  customer?.customerCreatedOn ||
+                    customer?.createdOn
+                ).format("LL")}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -123,33 +152,73 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
           </div>
           <div>
             <div className="text-sm text-gray-600">Avg. Spend</div>
-            <div className="text-2xl font-semibold"> ${numeral(
-                        Utility.getAvgSpend(
-                          customer.totalTransactionsCount || 1,
-                          customer.totalTransactionsSum || 0
-                        )
-                      ).format("0.00")}</div>
+            <div className="text-2xl font-semibold">${numeral(
+              Utility.getAvgSpend(
+                customer.totalTransactionsCount || 1,
+                customer.totalTransactionsSum || 0
+              )
+            ).format("0.00")}</div>
           </div>
         </div>
 
         {/* Transactions */}
         <div>
           <h3 className="text-sm font-medium mb-4">Transactions</h3>
-          <div className="space-y-4">
-            {transactions.map((transaction) => (
-              <div key={transaction.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">${transaction.amount}</p>
-                  <p className="text-xs text-gray-500">
-                    {format(new Date(transaction.date), 'MMM dd, yyyy hh:mm:ss a')}
-                  </p>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {transaction.id}
-                </div>
-              </div>
-            ))}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction ID</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.length > 0 ? (
+                  transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.id}</TableCell>
+                      <TableCell>${numeral(transaction.amount).format('0.00')}</TableCell>
+                      <TableCell>{moment(transaction.transactionOn).format("LL LTS")}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No transactions found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+
+          {/* Pagination */}
+          {transactions.length > 0 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-gray-500">
+                Showing {transactions.length} of {totalTransactions} results
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
