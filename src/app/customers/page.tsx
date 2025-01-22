@@ -16,7 +16,7 @@ import {
 import { Utility } from "@/utility/Utility";
 import numeral from "numeral";
 import { CustomerDetailsPanel } from '@/components/customers/CustomerDetailsPanel';
-import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types';
+import { TCustomerModelJSON, TCustomerFilterRequest, TCustomerFilterCountRequest } from '@shoutout-labs/market_buzz_crm_types';
 import { CustomerFilter } from '@/components/customers/CustomerFilter';
 import { CustomerDataProvider, useCustomerData } from '@/contexts/CustomerDataContext';
 import { filterConfig } from '@/components/customers/CustomersFilterConfig';
@@ -54,6 +54,10 @@ interface SegmentCount {
   count: number
 }
 
+interface ExtendedCustomerFilterRequest extends TCustomerFilterRequest {
+  filter?: Record<string, any>;
+}
+
 function CustomersContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -88,13 +92,49 @@ function CustomersContent() {
     queryFn: async () => {
       const counts = await Promise.all(
         PreDefinedSegments.map(async (segment) => {
-          const response = await getCustomersCount({})
+          const filterObj = getSegmentFilter(segment.id)
+          const response = await getCustomersCount({
+            isRequiredPhoneNumber: segment.id === 'reachable',
+            hasTransactions: segment.id === 'first-time',
+            ...filterObj
+          })
           return { id: segment.id, count: response.count }
         })
       )
       return counts
     }
   })
+
+  // Function to get filter based on segment
+  const getSegmentFilter = (segmentId: string) => {
+    switch (segmentId) {
+      case 'reachable':
+        return { phoneNumber: { $exists: true, $ne: null } }
+      case 'first-time':
+        return { totalTransactionsCount: 1 }
+      case 'inactive':
+        return {
+          lastPurchaseDate: {
+            $lt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        }
+      default:
+        // For custom segments, get filter from segments data
+        const customSegment = segments?.find(s => s.id === segmentId)
+        return customSegment?.filter || {}
+    }
+  }
+
+  // Update useEffect to set initial filter based on active tab
+  React.useEffect(() => {
+    if (activeTab !== 'all') {
+      const filterObj = getSegmentFilter(activeTab)
+      setFilterQuery(filterObj)
+    } else {
+      setFilterQuery(null)
+    }
+    setCurrentPage(1)
+  }, [activeTab])
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -110,9 +150,9 @@ function CustomersContent() {
 
   // Update filter handler
   const onFilterCustomers = async (filters: any) => {
-    const customerFilters = Utility.getMongoDBQuery(filters, filterConfig);
+    const filterObj = Utility.getMongoDBQuery(filters, filterConfig);
     setCurrentPage(1);
-    setFilterQuery(customerFilters);
+    setFilterQuery(filterObj);
   };
 
   // Clear filters
@@ -125,6 +165,7 @@ function CustomersContent() {
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
+    handleClearFilters()
   }
 
   const totalPages = Math.ceil(customersCount / 10)
