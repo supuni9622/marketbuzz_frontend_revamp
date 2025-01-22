@@ -29,10 +29,34 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { useQuery } from '@tanstack/react-query'
+import { getSegments, getCustomersCount } from '@/services'
+import { PreDefinedSegments } from '@/app/campaigns/sms/Constants'
+import { Loader } from '@/components/common/Loader'
+import { Badge } from '@/components/ui/badge'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { CustomerTable } from '@/components/customers/CustomerTable'
+
+interface Segment {
+  id: string
+  name: string
+  description?: string
+  filter: any // Replace with proper filter type if available
+}
+
+interface SegmentCount {
+  id: string
+  count: number
+}
 
 function CustomersContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeSegment, setActiveSegment] = useState('All Customers');
+  const [activeTab, setActiveTab] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState<TCustomerModelJSON | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterResult, setIsFilterResult] = useState(false);
@@ -50,6 +74,27 @@ function CustomersContent() {
     setSearchQuery,
     setFilterQuery
   } = useCustomerData();
+
+  const { data: segments, isLoading: isLoadingSegments } = useQuery<Segment[]>({
+    queryKey: ['segments'],
+    queryFn: async () => {
+      const response = await getSegments({ limit: 100, skip: 0 })
+      return response.items
+    }
+  })
+
+  const { data: segmentCounts } = useQuery<SegmentCount[]>({
+    queryKey: ['segment-counts'],
+    queryFn: async () => {
+      const counts = await Promise.all(
+        PreDefinedSegments.map(async (segment) => {
+          const response = await getCustomersCount({})
+          return { id: segment.id, count: response.count }
+        })
+      )
+      return counts
+    }
+  })
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -78,30 +123,9 @@ function CustomersContent() {
     setShowFilters(false);
   };
 
-  const segments = [
-    { name: 'All Customers', count: 12 },
-    { name: 'Reachable Customers', count: 6 },
-    { name: 'First Time Customers', count: 2 },
-    { name: 'Inactive Customers', count: 1 }
-  ];
-
-  const moreSegments = [
-    { value: 'visits=2', label: 'visits=2' },
-    { value: 'visits=1', label: 'visits=1' },
-    { value: 'test-group', label: 'Test group' },
-    { value: 'last-activity-6-months', label: 'Last activity 6 months' },
-    { value: 'visits2', label: 'Visits2' },
-    { value: 'pradeep', label: 'Pradeep' },
-    { value: 'fv-customers', label: 'FV Customers' },
-    { value: 'anjali-test-now', label: 'Anjali Test Now' },
-    { value: 'anja', label: 'Anja' },
-    { value: 'anj-test', label: 'Anj Test' },
-    { value: 'no-visits', label: 'No visits' },
-    { value: 'not-anjali', label: 'Not Anjali' },
-    { value: 'not-madura', label: 'Not Madura' },
-    { value: 'thamindu', label: 'Thamindu' },
-    { value: 'apeksha', label: 'Apeksha' }
-  ];
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+  }
 
   const totalPages = Math.ceil(customersCount / 10)
   const showEllipsis = totalPages > 7
@@ -138,163 +162,130 @@ function CustomersContent() {
     return pages
   }
 
+  if (isLoadingSegments) {
+    return <Loader />
+  }
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex space-x-4">
-        {segments.map((segment) => (
-          <button
-            key={segment.name}
-            onClick={() => setActiveSegment(segment.name)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium",
-              activeSegment === segment.name
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            )}
-          >
-            {segment.name} <span className="ml-2 text-xs">{segment.count}</span>
-          </button>
-        ))}
-        <Select>
-          <SelectTrigger className="w-[180px] bg-gray-100 text-gray-600 hover:bg-gray-200 border-0">
-            <SelectValue placeholder="+ More Segments" />
-          </SelectTrigger>
-          <SelectContent>
-            {moreSegments.map((segment) => (
-              <SelectItem key={segment.value} value={segment.value}>
-                {segment.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="w-1/3">
-          <Input
-            type="search"
-            placeholder="Search customers..."
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-[300px] pl-8"
-          />
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
-        <div className="flex gap-2">
-          {isFilterResult && (
-            <Button
-              variant="outline"
-              onClick={handleClearFilters}
-              className="text-red-500 hover:text-red-600 border-red-200"
-            >
-              Clear Filters
-            </Button>
+      {/* Tabs */}
+      <div className="flex items-center space-x-4 border-b">
+        <button
+          onClick={() => handleTabChange('all')}
+          className={cn(
+            'pb-4 text-sm font-medium transition-colors hover:text-primary',
+            activeTab === 'all'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground'
           )}
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            {showFilters ? 'Hide Filters' : 'Filter Customers'}
-          </Button>
-        </div>
+        >
+          All Customers
+          <Badge variant="secondary" className="ml-2">
+            {customersCount}
+          </Badge>
+        </button>
+
+        {PreDefinedSegments.map((segment: Segment) => {
+          const count = segmentCounts?.find(c => c.id === segment.id)?.count || 0
+          return (
+            <button
+              key={segment.id}
+              onClick={() => handleTabChange(segment.id)}
+              className={cn(
+                'pb-4 text-sm font-medium transition-colors hover:text-primary',
+                activeTab === segment.id
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground'
+              )}
+            >
+              {segment.name}
+              <Badge variant="secondary" className="ml-2">
+                {count}
+              </Badge>
+            </button>
+          )
+        })}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="text-sm font-medium">
+              + More Segments
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {segments?.map((segment: Segment) => (
+              <DropdownMenuItem
+                key={segment.id}
+                onClick={() => handleTabChange(segment.id)}
+              >
+                {segment.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {showFilters && (
-        <CustomerFilter
-          isLoading={isLoadingCustomers}
-          setIsFilterResult={setIsFilterResult}
-          onFilterCustomers={onFilterCustomers}
-          currentFilters={currentFilters}
-          setCurrentFilters={setCurrentFilters}
-          handleSegmentCreationSuccess={refetchCustomersData}
-        />
+      {/* Active Segment Description */}
+      {activeTab !== 'all' && (
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <h3 className="font-medium mb-2">
+            {PreDefinedSegments.find((s: Segment) => s.id === activeTab)?.name || 
+             segments?.find((s: Segment) => s.id === activeTab)?.name}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {PreDefinedSegments.find((s: Segment) => s.id === activeTab)?.description || 
+             segments?.find((s: Segment) => s.id === activeTab)?.description}
+          </p>
+        </div>
       )}
 
-      {/* Customers Table */}
-      <div className="relative overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-gray-50">
-            <tr>
-              <th className="px-6 py-3">First Name</th>
-              <th className="px-6 py-3">Last Name</th>
-              <th className="px-6 py-3">Email</th>
-              <th className="px-6 py-3">Phone Number</th>
-              <th className="px-6 py-3">Avg. Spend</th>
-              <th className="px-6 py-3">Visits</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white">
-            {isLoadingCustomers ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center">Loading customers...</td>
-              </tr>
-            ) : customers?.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center">No customers found.</td>
-              </tr>
-            ) : (
-              customers?.map((customer) => (
-                <tr 
-                  key={customer.id} 
-                  className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setSelectedCustomer(customer)}
+      {/* Filters and Table */}
+      <div className="space-y-4">
+        {activeTab === 'all' && (
+          <>
+            <div className="flex justify-between items-center">
+              <div className="relative w-[300px]">
+                <Input
+                  type="search"
+                  placeholder="Search customers..."
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-8"
+                />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <div className="flex gap-2">
+                {isFilterResult && (
+                  <Button
+                    variant="outline"
+                    onClick={handleClearFilters}
+                    className="text-red-500 hover:text-red-600 border-red-200"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
                 >
-                  <td className="px-6 py-4">{customer.firstName}</td>
-                  <td className="px-6 py-4">{customer.lastName}</td>
-                  <td className="px-6 py-4">{customer.email}</td>
-                  <td className="px-6 py-4">{customer.phoneNumber}</td>
-                  <td className="px-6 py-4">${numeral(
-                        Utility.getAvgSpend(
-                          customer.totalTransactionsCount || 1,
-                          customer.totalTransactionsSum || 0
-                        )
-                      ).format("0.00")}</td>
-                  <td className="px-6 py-4">{customer.totalTransactionsCount || 0}</td>
-                </tr>
-              ))
+                  {showFilters ? 'Hide Filters' : 'Filter Customers'}
+                </Button>
+              </div>
+            </div>
+
+            {showFilters && (
+              <CustomerFilter
+                isLoading={isLoadingCustomers}
+                setIsFilterResult={setIsFilterResult}
+                onFilterCustomers={onFilterCustomers}
+                currentFilters={currentFilters}
+                setCurrentFilters={setCurrentFilters}
+                handleSegmentCreationSuccess={refetchCustomersData}
+              />
             )}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        {!isLoadingCustomers && customers?.length > 0 && (
-          <div className="mt-4">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    className={cn("cursor-pointer", currentPage === 1 && "pointer-events-none opacity-50")}
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((page, index) => (
-                  page === 'ellipsis' ? (
-                    <PaginationItem key={`ellipsis-${index}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page as number)}
-                        isActive={currentPage === page}
-                        className="cursor-pointer"
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    className={cn("cursor-pointer", currentPage === totalPages && "pointer-events-none opacity-50")}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          </>
         )}
+
+        <CustomerTable data={customers} />
       </div>
 
       {/* Customer Details Side Panel */}

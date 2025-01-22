@@ -15,6 +15,7 @@ import {
 import { filterConfig } from './CustomersFilterConfig'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
+import { SaveFilterModal } from './SaveFilterModal'
 
 interface CustomerFilterProps {
   isLoading: boolean
@@ -58,6 +59,7 @@ export function CustomerFilter({
     QbUtils.loadTree(currentFilters.query || emptyQuery),
     filterConfig
   ))
+  const [showSaveModal, setShowSaveModal] = useState(false)
 
   const onChange = useCallback((immutableTree: ImmutableTree, config: Config) => {
     setTree(immutableTree)
@@ -90,34 +92,49 @@ export function CustomerFilter({
     setIsFilterResult(false)
   }
 
+  const handleSaveFilter = async (name: string) => {
+    console.log('Saving filter with name:', name)
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="qb-lite">
-        <Query
-          {...filterConfig}
-          value={tree}
-          onChange={onChange}
-          renderBuilder={renderBuilder}
-        />
+    <>
+      <div className="space-y-4">
+        <div className="qb-lite">
+          <Query
+            {...filterConfig}
+            value={tree}
+            onChange={onChange}
+            renderBuilder={renderBuilder}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setShowSaveModal(true)}>
+            Save Filter
+          </Button>
+          <Button
+            onClick={handleFilter}
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Apply Filter
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleClear}
+            disabled={isLoading}
+            className="text-red-500 hover:text-red-600 border-red-200"
+          >
+            Clear Filter
+          </Button>
+        </div>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          onClick={handleClear}
-          disabled={isLoading}
-          className="text-red-500 hover:text-red-600 border-red-200"
-        >
-          Clear Filter
-        </Button>
-        <Button
-          onClick={handleFilter}
-          disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Apply Filter
-        </Button>
-      </div>
-    </div>
+      <SaveFilterModal 
+        open={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveFilter}
+      />
+    </>
   )
 } 
