@@ -18,6 +18,10 @@ interface CustomerDataContextType {
   currentPage: number
   setCurrentPage: (page: number) => void
   refetchCustomersData: () => Promise<void>
+  searchQuery: string
+  setSearchQuery: (query: string) => void
+  filterQuery: any
+  setFilterQuery: (filter: any) => void
 }
 
 const CustomerDataContext = createContext<CustomerDataContextType | undefined>(undefined)
@@ -28,6 +32,8 @@ interface CustomerDataProviderProps {
 
 export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterQuery, setFilterQuery] = useState<any>(null)
   const limit = 10
   const skip = (currentPage - 1) * limit
 
@@ -37,19 +43,51 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
     isFetching: isFetchingCustomersData,
     refetch: refetchCustomers
   } = useQuery({
-    queryKey: [CustomersFilterTasks.FETCH_CUSTOMERS, currentPage],
+    queryKey: [CustomersFilterTasks.FETCH_CUSTOMERS, currentPage, searchQuery, filterQuery],
     queryFn: async () => {
+      if (searchQuery) {
+        const response = await CustomerService.searchCustomers({
+          query: searchQuery,
+          limit,
+          skip
+        })
+        return response.items
+      }
+      
+      if (filterQuery) {
+        const response = await CustomerService.filterCustomers({
+          filterObj: filterQuery,
+          limit,
+          skip
+        })
+        return response.items
+      }
+
       const response = await CustomerService.getCustomers({
         limit,
         skip
       })
       return response.items
-    }
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 2,
+    retryDelay: 1000,
+    enabled: !searchQuery || searchQuery.length >= 2,
+    placeholderData: (previousData) => previousData,
   })
 
   const { data: customersCount = 0 } = useQuery({
-    queryKey: [CustomersFilterTasks.FETCH_CUSTOMER_COUNT],
+    queryKey: [CustomersFilterTasks.FETCH_CUSTOMER_COUNT, searchQuery, filterQuery],
     queryFn: async () => {
+      if (filterQuery) {
+        const response = await CustomerService.filterCustomersCount({
+          filterObj: filterQuery
+        })
+        return response.count
+      }
+
       const response = await CustomerService.getCustomersCount({})
       return response.count
     }
@@ -68,7 +106,11 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
         customersCount,
         currentPage,
         setCurrentPage,
-        refetchCustomersData
+        refetchCustomersData,
+        searchQuery,
+        setSearchQuery,
+        filterQuery,
+        setFilterQuery
       }}
     >
       {children}

@@ -68,4 +68,13 @@ export class Utility {
 
         return processRuleGroup(filters);
       }
+
+      static replaceOrganizationCustomAttribute(text: string, organizationName?: string): string {
+        return text.replace(/\{\{organization\}\}/g, organizationName || '')
+      }
+
+      static hasCustomAttributes(text: string): boolean {
+        const customAttributeRegex = /\{\{[^}]+\}\}/g
+        return customAttributeRegex.test(text)
+      }
 }  

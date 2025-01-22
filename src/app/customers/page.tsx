@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,13 +32,11 @@ import {
 
 function CustomersContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeSegment, setActiveSegment] = useState('All Customers');
   const [selectedCustomer, setSelectedCustomer] = useState<TCustomerModelJSON | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterResult, setIsFilterResult] = useState(false);
   const [currentFilters, setCurrentFilters] = useState({});
-  const [searchValue, setSearchValue] = useState("");
 
   const {
     customers,
@@ -47,13 +45,37 @@ function CustomersContent() {
     isFetchingCustomersData,
     customersCount,
     currentPage,
-    setCurrentPage
+    setCurrentPage,
+    searchQuery,
+    setSearchQuery,
+    setFilterQuery
   } = useCustomerData();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await refetchCustomersData();
     setIsRefreshing(false);
+  };
+
+  // Update search handler to use direct state update
+  const handleSearch = (value: string) => {
+    setCurrentPage(1);
+    setSearchQuery(value);
+  };
+
+  // Update filter handler
+  const onFilterCustomers = async (filters: any) => {
+    const customerFilters = Utility.getMongoDBQuery(filters, filterConfig);
+    setCurrentPage(1);
+    setFilterQuery(customerFilters);
+  };
+
+  // Clear filters
+  const handleClearFilters = () => {
+    setFilterQuery(null);
+    setCurrentFilters({});
+    setIsFilterResult(false);
+    setShowFilters(false);
   };
 
   const segments = [
@@ -80,12 +102,6 @@ function CustomersContent() {
     { value: 'thamindu', label: 'Thamindu' },
     { value: 'apeksha', label: 'Apeksha' }
   ];
-
-  const onFilterCustomers = async (filters: any) => {
-    const customerFilters = Utility.getMongoDBQuery(filters, filterConfig);
-    // Handle filter logic here
-    console.log('Filtering with:', customerFilters);
-  };
 
   const totalPages = Math.ceil(customersCount / 10)
   const showEllipsis = totalPages > 7
@@ -155,30 +171,31 @@ function CustomersContent() {
 
       <div className="flex items-center justify-between">
         <div className="w-1/3">
-          {/* Search and Filter */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-[300px] pl-8"
-            />
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
-          <Button onClick={handleRefresh} variant="outline" size="icon" disabled={isRefreshing || isFetchingCustomersData}>
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          <Input
+            type="search"
+            placeholder="Search customers..."
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-[300px] pl-8"
+          />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        </div>
+        <div className="flex gap-2">
+          {isFilterResult && (
+            <Button
+              variant="outline"
+              onClick={handleClearFilters}
+              className="text-red-500 hover:text-red-600 border-red-200"
+            >
+              Clear Filters
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            {showFilters ? 'Hide Filters' : 'Filter Customers'}
           </Button>
         </div>
-      </div>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          {showFilters ? 'Hide Filters' : 'Filter Customers'}
-        </Button>
       </div>
 
       {showFilters && (
@@ -191,8 +208,6 @@ function CustomersContent() {
           handleSegmentCreationSuccess={refetchCustomersData}
         />
       )}
-
-     
 
       {/* Customers Table */}
       <div className="relative overflow-x-auto">
