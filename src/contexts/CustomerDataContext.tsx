@@ -3,7 +3,7 @@
 import { createContext, useContext, ReactNode, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TCustomerModelJSON } from '@shoutout-labs/market_buzz_crm_types'
-import { CustomerService } from '@/services/CustomerService'
+import { searchCustomers, filterCustomers, getCustomers, filterCustomersCount, getCustomersCount } from '@/services'
 
 export enum CustomersFilterTasks {
   FETCH_CUSTOMERS = 'FETCH_CUSTOMERS',
@@ -46,7 +46,7 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
     queryKey: [CustomersFilterTasks.FETCH_CUSTOMERS, currentPage, searchQuery, filterQuery],
     queryFn: async () => {
       if (searchQuery) {
-        const response = await CustomerService.searchCustomers({
+        const response = await searchCustomers({
           query: searchQuery,
           limit,
           skip
@@ -55,7 +55,7 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
       }
       
       if (filterQuery) {
-        const response = await CustomerService.filterCustomers({
+        const response = await filterCustomers({
           filterObj: filterQuery,
           limit,
           skip
@@ -63,7 +63,7 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
         return response.items
       }
 
-      const response = await CustomerService.getCustomers({
+      const response = await getCustomers({
         limit,
         skip
       })
@@ -82,13 +82,13 @@ export function CustomerDataProvider({ children }: CustomerDataProviderProps) {
     queryKey: [CustomersFilterTasks.FETCH_CUSTOMER_COUNT, searchQuery, filterQuery],
     queryFn: async () => {
       if (filterQuery) {
-        const response = await CustomerService.filterCustomersCount({
+        const response = await filterCustomersCount({
           filterObj: filterQuery
         })
         return response.count
       }
 
-      const response = await CustomerService.getCustomersCount({})
+      const response = await getCustomersCount({})
       return response.count
     }
   })

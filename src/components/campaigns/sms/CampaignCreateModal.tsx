@@ -13,7 +13,7 @@ import { Info } from "lucide-react"
 import { useOrganizationStore } from "@/store/useOrganizationStore"
 import { PreDefinedSegments, isMarketingAllowedRule } from "@/app/campaigns/sms/Constants"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { CustomerService } from "@/services/CustomerService"
+import { getSegments, getCustomersCount, filterCustomersCount } from "@/services"
 import { toast } from "sonner"
 import { Utility } from "@/utils/Utility"
 import { filterConfig } from "../../../app/campaigns/sms/CustomersFilterConfig"
@@ -46,12 +46,12 @@ export function CampaignCreateModal({ open, onClose }: CampaignCreateModalProps)
 
   const { data: segmentsData } = useQuery({
     queryKey: ["segments"],
-    queryFn: () => CustomerService.getSegments({ limit: 100, skip: 0 })
+    queryFn: () => getSegments({ limit: 100, skip: 0 })
   })
 
   const { data: totalCustomers } = useQuery({
     queryKey: ["customerCount", selectedSegment === "all_customers", isCheckedMarketing],
-    queryFn: () => CustomerService.getCustomersCount({
+    queryFn: () => getCustomersCount({
       marketingAllowed: isCheckedMarketing,
       isRequiredPhoneNumber: true
     })
@@ -65,7 +65,7 @@ export function CampaignCreateModal({ open, onClose }: CampaignCreateModalProps)
   }, [segmentsData])
 
   const getCustomersCountInSegment = useCallback(async (filterObj: any) => {
-    const res = await CustomerService.filterCustomersCount({ filterObj })
+    const res = await filterCustomersCount({ filterObj })
     setCustomersCountOfSegment(res.count ?? 0)
   }, [])
 

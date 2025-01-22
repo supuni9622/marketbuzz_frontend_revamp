@@ -77,7 +77,7 @@ const getCustomersCount = (queryObj: CustomerFilterBaseQuery): Promise<any> => {
   );
 };
 
-export const CustomerService = {
+export {
   getCustomers,
   getSegments,
   filterCustomersCount,

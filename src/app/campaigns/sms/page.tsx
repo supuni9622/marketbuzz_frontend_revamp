@@ -11,20 +11,22 @@ import {
   TTemplateModelJSON,
   TCampaignModelJSON
 } from "@shoutout-labs/market_buzz_crm_types";
-
-// Campaign status enum
-export enum CampaignStatus {
-  DRAFT = 'DRAFT',
-  SCHEDULED = 'SCHEDULED',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
-}
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { useQuery } from '@tanstack/react-query'
+import { getTemplates,getCustomersCount  } from '@/services';
+import { CampaignEditModal } from '@/components/campaigns/automated/CampaignEditModal'
+import { Loader } from '@/components/common/Loader'
+import {  CampaignStatus } from '@/app/campaigns/constants';
+import { PerCreditValue } from "@shoutout-labs/marketbuzz-constants";
 
 export default function SMSCampaignsPage() {
   const [activeTab, setActiveTab] = useState('Campaign Ideas')
   const [showBanner, setShowBanner] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = React.useState<TTemplateModelJSON | null>(null)
+  
 
   const { 
     templates, 
@@ -42,6 +44,31 @@ export default function SMSCampaignsPage() {
     error: campaignsError
   } = useCampaigns()
 
+  const { data: totalCustomers, isLoading } = useQuery<number>({
+    queryKey: ["customerCount"],
+    queryFn: async () => {
+      const queryObj = {
+        marketingAllowed: true,
+        isRequiredPhoneNumber: true
+      };
+      const response = await getCustomersCount(queryObj);
+      return response?.count;
+    },
+    refetchOnWindowFocus: false
+  });
+
+  const { data: templatesData, isLoading: templatesDataLoading } = useQuery({
+    queryKey: ['templates', 0],
+    queryFn: async () => {
+      const response = await getTemplates({
+        limit: 10,
+        skip: 0
+      })
+      return response.items as TTemplateModelJSON[]
+    },
+    refetchOnWindowFocus: false
+  })
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     if (activeTab === 'Campaign Ideas') {
@@ -50,6 +77,18 @@ export default function SMSCampaignsPage() {
       await refetchCampaigns()
     }
     setIsRefreshing(false)
+  }
+
+  const handleSetupCampaign = (template: TTemplateModelJSON) => {
+    setSelectedTemplate(template)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedTemplate(null)
+  }
+
+  if (templatesDataLoading) {
+    return <Loader />
   }
 
   return (
@@ -140,55 +179,50 @@ export default function SMSCampaignsPage() {
         <div className="space-y-4">
           {isLoadingTemplates ? (
             <div className="text-center py-8">Loading templates...</div>
-          ) : templates?.length === 0 ? (
+          ) : templatesData?.length === 0 ? (
             <div className="text-center py-8">No templates found.</div>
           ) : (
-            templates?.map((template: TTemplateModelJSON) => (
-              <div key={template.id} className="border rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-lg font-medium">{template.name}</h3>
+            templatesData?.map((template: TTemplateModelJSON) => (
+              <Card key={template.id} className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium">{template.type}</h2>
                     {template.isNewTemplate && (
-                      <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
-                        New
-                      </span>
+                      <Badge className="bg-blue-500">New</Badge>
                     )}
                   </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-8">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Message Text
-                    </label>
-                    <p className="text-sm text-gray-600">{template.messageBody}</p>
-                  </div>
+                  <div className="grid grid-cols-12 gap-6">
+                    <div className="col-span-6">
+                      <p className="text-sm text-gray-500 mb-2">Message Text</p>
+                      <p className="text-sm">{template.messageBody}</p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type
-                    </label>
-                    <p className="text-sm text-gray-900">{template.type}</p>
-                  </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-500 mb-2">No. Customers</p>
+                      <p className="text-sm">{totalCustomers || 0}</p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estimated Cost
-                    </label>
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-900">
-                        ${template.costPerMessage.toFixed(3)} per message
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-500 mb-2">Estimated Cost</p>
+                      <p className="text-sm">{template.costPerMessage * (totalCustomers || 0)} Buzz Credit/s</p>
+                      <p className="text-sm text-gray-500">
+                        ${((template.costPerMessage * (totalCustomers || 0) * PerCreditValue) || 0).toFixed(3)}
                       </p>
+                    </div>
+
+                    <div className="col-span-2 flex items-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleSetupCampaign(template)}
+                        className="w-full"
+                      >
+                        Setup Campaign
+                      </Button>
                     </div>
                   </div>
                 </div>
-
-                <div className="mt-4 flex justify-end">
-                  <Button variant="ghost" className="text-blue-600 hover:text-blue-500">
-                    Setup Campaign
-                  </Button>
-                </div>
-              </div>
+              </Card>
             ))
           )}
         </div>
@@ -284,6 +318,13 @@ export default function SMSCampaignsPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {selectedTemplate && (
+        <CampaignEditModal
+          template={selectedTemplate}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   )
