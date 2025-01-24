@@ -14,7 +14,9 @@ import {
   TCustomerReportRequest,
   TCustomerReportResponse,
   TVisitFrequencyRequest,
-  TVisitFrequencyResponse
+  TVisitFrequencyResponse,
+  TTransactionGetResponse,
+  THeatmapResponse
 } from "@shoutout-labs/market_buzz_crm_types";
 
 const getTransactionCountAnalytics = (
@@ -97,6 +99,7 @@ const getVisitFrequencyAnalytics = (
   );
 };
 
+
 export interface Invoice {
   id: string
   purchaseDate: string
@@ -112,6 +115,12 @@ export const getInvoices = async (): Promise<Invoice[]> => {
   return response.json()
 }
 
+const getTransactionHeatmapAnalytics = (year: number, month: number): Promise<THeatmapResponse> => {
+  return fetchGet(
+    `${Constants.REACT_APP_API_BASE_URL}analytics/transaction/heatmap?year=${year}&month=${month}`
+  );
+};
+
 export const AnalyticsService = {
   getTransactionCountAnalytics,
   getNewCustomerCountAnalytics,
@@ -124,5 +133,6 @@ export const AnalyticsService = {
   getCustomersDateBucketAnalytics,
   getRepeatCustomersDateBucketAnalytics,
   getVisitFrequencyAnalytics,
-  getInvoices
+  getInvoices,
+  getTransactionHeatmapAnalytics
 }; 

@@ -32,7 +32,8 @@ const navigation = [
     icon: BarChart,
     subItems: [
       { name: 'Sales', href: '/reports/sales' },
-      { name: 'Customers', href: '/reports/customers' }
+      { name: 'Customers', href: '/reports/customers' },
+      { name: 'Transaction Heatmap', href: '/reports/transactions' }
     ]
   }
 ]

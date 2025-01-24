@@ -66,7 +66,7 @@ export const PreDefinedSegments = [
     id: "6710f0667809843b5574e371",
     name: "Inactive  Customers",
     description:
-      "Customers who haven’t made a purchase in over six months, indicating a need for re-engagement.",
+      "Customers who haven't made a purchase in over six months, indicating a need for re-engagement.",
     filter: {
       id: "a8a889ab-0123-4456-b89a-b192bcb386c7",
       type: "group",
