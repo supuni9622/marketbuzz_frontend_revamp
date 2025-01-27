@@ -1,5 +1,12 @@
 import TagManager from "react-gtm-module";
-import { GTM } from "@/constants";
+import { GTM, UserRole } from "@/constants";
+
+// Declare global dataLayer type
+declare global {
+  interface Window {
+    dataLayer?: any[]
+  }
+}
 
 interface GTMEvent {
   event: string;

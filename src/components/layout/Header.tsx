@@ -1,15 +1,14 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { CreditCard, ChevronDown } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { useOrganizationStore } from '@/store/useOrganizationStore';
+import { ProfileDropdown } from '@/components/profile/ProfileDropdown';
 
 export function Header() {
   const router = useRouter();
-  const { credits } = useOrganizationStore()
-
+  const credits = useOrganizationStore((state) => state.credits);
 
   const handleBuyCredits = () => {
     router.push('/billing');
@@ -29,17 +28,8 @@ export function Header() {
               Buy Credits
             </button>
           </div>
-          <button className="flex items-center space-x-2">
-            <div className="relative h-8 w-8 rounded-full overflow-hidden">
-              <Image
-                src="https://picsum.photos/200"
-                alt="User avatar"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <ChevronDown className="h-4 w-4 text-gray-500" />
-          </button>
+          
+          <ProfileDropdown />
         </div>
       </div>
     </header>

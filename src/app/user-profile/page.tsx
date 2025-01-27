@@ -1,90 +1,137 @@
 'use client'
 
 import React from 'react'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { User, CreditCard, Bell, Lock } from 'lucide-react'
+import Image from 'next/image'
+import moment from 'moment'
+import { useOrganizationStore } from '@/store/useOrganizationStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { UserRole } from '@/constants'
 
-const tabs = [
-  { name: 'Profile', icon: User },
-  { name: 'Billing', icon: CreditCard },
-  { name: 'Notifications', icon: Bell },
-  { name: 'Security', icon: Lock },
-]
+interface Employee {
+  id: string
+  name: string
+  email?: string
+  role: string
+}
 
 export default function UserProfilePage() {
-  const [activeTab, setActiveTab] = React.useState('Profile')
+  const role = useAuthStore((state) => state.role)
+  const organization = useOrganizationStore((state) => state.organization)
 
   return (
-    <MainLayout>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Account Settings</h1>
-        
-        <div className="flex space-x-4 border-b">
-          {tabs.map(({ name, icon: Icon }) => (
-            <button
-              key={name}
-              onClick={() => setActiveTab(name)}
-              className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                activeTab === name
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{name}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6">
-          {activeTab === 'Profile' && (
-            <div className="bg-white rounded-lg border p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="John Doe"
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg border shadow-sm">
+          <div className="p-6 space-y-8">
+            {/* Profile Header */}
+            <div className="flex items-center gap-4">
+              <div className="relative h-16 w-16 rounded-full overflow-hidden">
+                <Image
+                  src={organization.logo || '/avatar.png'}
+                  alt="Avatar"
+                  fill
+                  className="object-cover"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Company
-                </label>
-                <input
-                  type="text"
-                  className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Acme Inc."
-                />
-              </div>
-              <div className="pt-4">
-                <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
-                  Save Changes
-                </button>
+                <h2 className="text-xl font-semibold">{organization.name || 'Admin'}</h2>
+                <div className="text-sm text-gray-500 space-y-1">
+                  <p>Created On: {moment(organization?.organizationCreatedOn).format('LL LTS')}</p>
+                  <p>Updated On: {moment(organization?.updatedOn).format('LL LTS')}</p>
+                  <p>Clover Created On: {moment(organization?.createdOn).format('LL LTS')}</p>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Other tab contents will be implemented similarly */}
-          {activeTab !== 'Profile' && (
-            <div className="bg-white rounded-lg border p-6">
-              <p className="text-gray-500">Content for {activeTab} tab</p>
+            {/* Business Details */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Business Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <p className="text-sm text-gray-900">{organization?.address?.address1}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <p className="text-sm text-gray-900">{organization?.address?.state}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <p className="text-sm text-gray-900">{organization?.address?.city}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Zip</label>
+                  <p className="text-sm text-gray-900">{organization?.address?.zip}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                  <p className="text-sm text-gray-900">{organization?.type}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Time Zone</label>
+                  <p className="text-sm text-gray-900">{organization?.timeZone}</p>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Admin Contact */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Admin Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <p className="text-sm text-gray-900">{organization?.owner?.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <p className="text-sm text-gray-900">{organization?.owner?.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <p className="text-sm text-gray-900">{organization?.phoneNumber}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Employees */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Employees</h3>
+              <div className="border rounded-lg divide-y">
+                {organization?.metadata?.employees?.map((employee: Employee) => (
+                  <div key={employee.id} className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">{employee.name}</p>
+                        {employee.email && (
+                          <p className="text-sm text-gray-500">{employee.email}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-500">Role: {employee.role}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Billing Information - Only visible to SUPERADMIN */}
+            {role === UserRole.SUPERADMIN && (
+              <div>
+                <h3 className="text-lg font-medium mb-4">Billing Information</h3>
+                <div className="border rounded-lg p-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Billing Status</label>
+                    <p className="text-sm text-gray-900">
+                      {organization?.metadata?.isBillable ? "Enabled" : "Disabled"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   )
 } 
