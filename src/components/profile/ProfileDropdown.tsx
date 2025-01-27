@@ -8,6 +8,7 @@ import { User, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useOrganizationStore } from '@/store/useOrganizationStore'
 import GTMService from '@/services/GTMService'
+import { Constants } from '@/constants'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +32,9 @@ export function ProfileDropdown() {
       organizationId: organizationId,
       role: role.toString()
     })
-    // Redirect to login page
-    router.push('/login')
-  }, [logoutUser, organizationId, role, router])
+    // Redirect to login page using window.location
+    window.location.href = `${Constants.REACT_APP_API_BASE_URL}auth/login`
+  }, [logoutUser, organizationId, role])
 
   return (
     <DropdownMenu>
