@@ -14,20 +14,34 @@ import {
 import { getOragnizations, getConfigurationData} from '@/services'
 import { Pagination } from '@/components/common/Pagination';
 import AdminAuthService from '@/services/AdminService';
+import { RefreshCw } from 'lucide-react'
+import { Button } from "@/components/ui/button";
+import {
+  TOrganizationModelJSON,
+  TOrganizationListGetResponse
+} from "@shoutout-labs/market_buzz_crm_types";
 
 interface OrganizationsTableProps {
-  searchResults: []
+  searchResults: TOrganizationModelJSON[]
   isSearchResult: boolean
+  setIsSearchResult: (value: boolean) => void
+  setOrganizationSearchData: (data: TOrganizationModelJSON[]) => void
 }
 
-export function OrganizationsTable({ searchResults, isSearchResult }: OrganizationsTableProps) {
+export function OrganizationsTable({ 
+  searchResults, 
+  isSearchResult, 
+  setIsSearchResult,
+  setOrganizationSearchData 
+}: OrganizationsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [limit] = useState(10)
   const [skip, setSkip] = useState(0)
 
-  const { data: organizationsData, isLoading: isOrgsLoading } = useQuery({
+  const { data: organizationsData, isLoading: isOrgsLoading, refetch } = useQuery<TOrganizationListGetResponse>({
     queryKey: ['organizations'],
-    queryFn: getOragnizations
+    queryFn: getOragnizations,
+    enabled: !isSearchResult
   })
 
   const { data: configData, isLoading: isConfigLoading } = useQuery({
@@ -51,8 +65,20 @@ export function OrganizationsTable({ searchResults, isSearchResult }: Organizati
     }
   }
 
+  const handleRefresh = () => {
+    setSkip(0)
+    setCurrentPage(1)
+    setIsSearchResult(false)
+    setOrganizationSearchData([])
+    refetch()
+  }
+
   const displayedOrganizations = useMemo(() => {
-    return isSearchResult ? searchResults : organizationsData?.items || []
+    return isSearchResult ? searchResults : organizationsData?.items || [];
+  }, [isSearchResult, searchResults, organizationsData]);
+
+  const totalCount = useMemo(() => {
+    return isSearchResult ? searchResults.length : organizationsData?.items.length || 0
   }, [isSearchResult, searchResults, organizationsData])
 
   if (isOrgsLoading || isConfigLoading) {
@@ -61,6 +87,18 @@ export function OrganizationsTable({ searchResults, isSearchResult }: Organizati
 
   return (
     <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Organizations</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isOrgsLoading}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -115,12 +153,12 @@ export function OrganizationsTable({ searchResults, isSearchResult }: Organizati
       </div>
       <div className="mt-4">
         <Pagination
-          dataCount={displayedOrganizations.length}
+          dataCount={totalCount}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           perPageData={limit}
           setSkip={setSkip}
-          loadCustomerData={getOragnizations}
+          loadCustomerData={() => refetch()}
         />
       </div>
     </div>

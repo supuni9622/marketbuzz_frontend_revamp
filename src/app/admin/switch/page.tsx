@@ -72,8 +72,10 @@ export default function SwitchAccountPage() {
         </div>
 
         <OrganizationsTable
-          searchResults={organizationSearchData as []}
+          searchResults={organizationSearchData}
           isSearchResult={isSearchResult}
+          setIsSearchResult={setIsSearchResult}
+          setOrganizationSearchData={setOrganizationSearchData}
         />
       </div>
     </div>
