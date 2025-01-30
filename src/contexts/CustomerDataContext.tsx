@@ -1,107 +1,144 @@
-'use client'
+"use client";
 
-import React, { createContext, useContext, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getCustomers, getCustomersCount } from '@/services'
-import { TCustomerModelJSON, TCustomerFilterRequest, TCustomerFilterCountRequest } from '@shoutout-labs/market_buzz_crm_types'
+import { createContext, useContext, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from '@/store/useAuthStore'
+import { useCustomersStore } from "@/store/useCustomersStore";
+import { TCustomerModelJSON } from "@shoutout-labs/market_buzz_crm_types";
+import {
+  filterCustomers,
+  filterCustomersCount,
+  getCustomers,
+  getCustomersCount,
+  getCustomersSearchCount,
+  searchCustomers
+} from "@/services";
+import { CustomersFilterTasks } from "@/types/customers";
 
-interface CustomerDataContextType {
-  customers: TCustomerModelJSON[]
-  isLoadingCustomers: boolean
-  isFetchingCustomersData: boolean
-  refetchCustomersData: () => Promise<any>
-  customersCount: number
-  currentPage: number
-  setCurrentPage: (page: number) => void
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  filterQuery: Record<string, any> | null
-  setFilterQuery: (filter: Record<string, any> | null) => void
+export interface CustomerFilterSkipLimit {
+  limit: number;
+  skip: number;
 }
 
-const CustomerDataContext = createContext<CustomerDataContextType | undefined>(undefined)
+export interface CustomerFilterBaseQuery {
+  marketingAllowed?: boolean;
+  isRequiredPhoneNumber?: boolean;
+  hasTransactions?: boolean;
+}
 
-export function CustomerDataProvider({ children }: { children: React.ReactNode }) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterQuery, setFilterQuery] = useState<Record<string, any> | null>(null)
+export interface SearchCustomerQuery {
+  query: string;
+}
 
-  const limit = 10
-  const skip = (currentPage - 1) * limit
+export interface FilterCustomerQuery {
+  filterObj: object;
+}
 
-  // Build filter object
-  const buildFilterObj = () => {
-    let filterObj: Record<string, any> = {}
-    
-    if (searchQuery) {
-      filterObj = {
-        $or: [
-          { firstName: { $regex: searchQuery, $options: 'i' } },
-          { lastName: { $regex: searchQuery, $options: 'i' } },
-          { email: { $regex: searchQuery, $options: 'i' } },
-          { phoneNumber: { $regex: searchQuery, $options: 'i' } }
-        ]
+export type SearchCustomerQueryWithSkipLimit = SearchCustomerQuery &
+  CustomerFilterSkipLimit;
+
+export type FilterCustomerQueryWithSkipLimit = FilterCustomerQuery &
+  CustomerFilterSkipLimit;
+export type CustomerFilterBaseQueryWithSkipLimit = CustomerFilterBaseQuery &
+  CustomerFilterSkipLimit;
+
+export function useCustomers() {
+ 
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const initCompleted = useAuthStore((state) => state.initCompleted);
+  const limit = useCustomersStore((state) => state.limit);
+  const skip = useCustomersStore((state) => state.skip);
+  const queryTask = useCustomersStore((state) => state.queryTask);
+
+  const {
+    data: customers,
+    isLoading: isLoadingCustomers,
+    refetch: refetchCustomersData,
+    isFetching: isFetchingCustomersData
+  } = useQuery<TCustomerModelJSON[], Error>({
+    queryKey: ["customers", queryTask.task, queryTask.query, limit, skip], //@ts-ignore
+    queryFn: async (): Promise<TCustomerModelJSON[]> => {
+      switch (queryTask.task) {
+        case CustomersFilterTasks.searchCustomers: {
+          const customerResponse = await searchCustomers({
+            ...(queryTask.query as SearchCustomerQuery),
+            ...{ limit, skip }
+          });
+
+          return (customerResponse.items ?? []) as TCustomerModelJSON[];
+        }
+        case CustomersFilterTasks.filterCustomers: {
+          const customerResponse = await filterCustomers({
+            ...(queryTask.query as FilterCustomerQuery),
+            ...{ limit, skip }
+          });
+          return (customerResponse.items ?? []) as TCustomerModelJSON[];
+        }
+        case CustomersFilterTasks.getAllCustomers:
+        default: {
+          const customerResponse = await getCustomers({ limit, skip });
+          return (customerResponse.items ?? []) as TCustomerModelJSON[];
+        }
       }
-    }
-
-    if (filterQuery) {
-      filterObj = { ...filterObj, ...filterQuery }
-    }
-
-    return filterObj
-  }
-
-  const { data: customersData, isLoading: isLoadingCustomers, isFetching: isFetchingCustomersData, refetch: refetchCustomersData } = useQuery({
-    queryKey: ['customers', currentPage, searchQuery, filterQuery],
-    queryFn: async () => {
-      const request = {
-        limit,
-        skip,
-        filterObj: buildFilterObj()
-      } satisfies TCustomerFilterRequest
-      const response = await getCustomers(request)
-      return response
-    }
-  })
-
-  const { data: countData } = useQuery({
-    queryKey: ['customers-count', searchQuery, filterQuery],
-    queryFn: async () => {
-      const request = {
-        marketingAllowed: filterQuery?.marketingAllowed,
-        isRequiredPhoneNumber: filterQuery?.isRequiredPhoneNumber,
-        hasTransactions: filterQuery?.hasTransactions
-      }
-      const response = await getCustomersCount(request)
-      return response
-    }
-  })
-
-  const value = {
-    customers: customersData?.items || [],
+    },
+    enabled: isLoggedIn() && initCompleted,
+    refetchOnWindowFocus: false
+  });
+  return {
+    customers,
     isLoadingCustomers,
-    isFetchingCustomersData,
     refetchCustomersData,
-    customersCount: countData?.count || 0,
-    currentPage,
-    setCurrentPage,
-    searchQuery,
-    setSearchQuery,
-    filterQuery,
-    setFilterQuery
-  }
-
-  return (
-    <CustomerDataContext.Provider value={value}>
-      {children}
-    </CustomerDataContext.Provider>
-  )
+    isFetchingCustomersData
+  };
 }
 
-export function useCustomerData() {
-  const context = useContext(CustomerDataContext)
-  if (context === undefined) {
-    throw new Error('useCustomerData must be used within a CustomerDataProvider')
-  }
-  return context
-} 
+export function useCustomersCount() {
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const initCompleted = useAuthStore((state) => state.initCompleted);
+  const limit = useCustomersStore((state) => state.limit);
+  const skip = useCustomersStore((state) => state.skip);
+  const queryTask = useCustomersStore((state) => state.queryTask);
+
+  const {
+    data: customersCount,
+    isLoading: isLoadingCustomersCount,
+    refetch: refetchCustomersCount,
+    isFetching: isFetchingCustomersCount
+  } = useQuery<number, Error>({
+    queryKey: ["customersCount", queryTask.task, queryTask.query, limit, skip], //@ts-ignore
+    queryFn: async (): Promise<number> => {
+      switch (queryTask.task) {
+        case CustomersFilterTasks.searchCustomers: {
+          const customerCountResponse = await getCustomersSearchCount(
+            queryTask.query as SearchCustomerQuery
+          );
+
+          return customerCountResponse.count ?? 0;
+        }
+        case CustomersFilterTasks.filterCustomers: {
+          const customerCountResponse = await filterCustomersCount(
+            queryTask.query as FilterCustomerQuery
+          );
+          return customerCountResponse.count ?? 0;
+        }
+
+        case CustomersFilterTasks.getAllCustomers:
+        default: {
+          const response = await getCustomersCount(
+            queryTask.query as CustomerFilterBaseQuery
+          );
+          return response.count ?? 0;
+        }
+      }
+    },
+    enabled: isLoggedIn() && initCompleted,
+    refetchOnWindowFocus: false
+  });
+
+  return {
+    customersCount,
+    isLoadingCustomersCount,
+    refetchCustomersCount,
+    isFetchingCustomersCount
+  };
+}

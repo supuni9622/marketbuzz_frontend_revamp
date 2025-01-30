@@ -77,4 +77,21 @@ export class Utility {
         const customAttributeRegex = /\{\{[^}]+\}\}/g
         return customAttributeRegex.test(text)
       }
+
+      static formatDate(date: string | Date | undefined): string {
+        if (!date) return '-';
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+
+      static isEmptyObject(object: any) : boolean {
+        return Object.keys(object).length === 0;
+      };
+    
+      static isEqualObjects(obj1: any, obj2: any) : boolean {
+        return JSON.stringify(obj1) === JSON.stringify(obj2);
+      }
 }  

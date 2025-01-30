@@ -3,6 +3,23 @@ import { Config } from '@react-awesome-query-builder/core'
 
 const InitialConfig = BasicConfig
 
+interface SelectFieldConfig {
+  label: string;
+  type: 'select';
+  valueSources: string[];
+  operators: string[];
+  options: Array<{ value: string; label: string }>;
+}
+
+interface BaseFieldConfig {
+  label: string;
+  type: string;
+  valueSources: string[];
+  operators: string[];
+}
+
+type FieldConfig = BaseFieldConfig | SelectFieldConfig;
+
 const commonTextOperators = ['equal', 'not_equal', 'contains', 'not_contains']
 const commonNumberOperators = ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal', 'between']
 const commonDateOperators = ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal', 'between']
@@ -24,13 +41,13 @@ export const filterConfig: Config = {
     },
     email: {
       label: 'Email',
-      type: 'text',
+      type: 'email',
       valueSources: ['value'],
       operators: commonTextOperators
     },
     phoneNumber: {
       label: 'Phone Number',
-      type: 'text',
+      type: 'tel',
       valueSources: ['value'],
       operators: commonTextOperators
     },
@@ -40,12 +57,34 @@ export const filterConfig: Config = {
       valueSources: ['value'],
       operators: commonNumberOperators
     },
+    avgSpend: {
+      label: 'Average Spend',
+      type: 'number',
+      valueSources: ['value'],
+      operators: commonNumberOperators
+    },
+    visits: {
+      label: 'Number of Visits',
+      type: 'number',
+      valueSources: ['value'],
+      operators: commonNumberOperators
+    },
+    lastActivityOn: {
+      label: 'Last Activity',
+      type: 'date',
+      valueSources: ['value'],
+      operators: commonDateOperators
+    },
     'optIn.marketing.allowed': {
       label: 'Marketing Permission',
-      type: 'boolean',
+      type: 'select',
       valueSources: ['value'],
-      operators: ['equal']
-    },
+      operators: ['equal'],
+      options: [
+        { value: 'true', label: 'Allowed' },
+        { value: 'false', label: 'Denied' },
+      ],
+    } as SelectFieldConfig,
     createdOn: {
       label: 'Created Date',
       type: 'date',

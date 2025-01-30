@@ -1,8 +1,20 @@
 import * as React from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
+
+interface PaginationProps {
+  datacount: number;
+  currentpage: number;
+  setcurrentpage: (pageNumber: number) => void;
+  perpagedata: number;
+  classname: string;
+}
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -12,6 +24,7 @@ const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
     {...props}
   />
 )
+Pagination.displayName = "Pagination"
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
@@ -38,13 +51,12 @@ type PaginationLinkProps = {
 } & Pick<ButtonProps, "size"> &
   React.ComponentProps<"button">
 
-const PaginationLink = ({
-  className,
-  isActive,
-  size = "icon",
-  ...props
-}: PaginationLinkProps) => (
+const PaginationLink = React.forwardRef<
+  HTMLButtonElement,
+  PaginationLinkProps
+>(({ className, isActive, size = "icon", ...props }, ref) => (
   <button
+    ref={ref}
     aria-current={isActive ? "page" : undefined}
     className={cn(
       buttonVariants({
@@ -55,14 +67,15 @@ const PaginationLink = ({
     )}
     {...props}
   />
-)
+))
 PaginationLink.displayName = "PaginationLink"
 
-const PaginationPrevious = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
+const PaginationPrevious = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<typeof PaginationLink>
+>(({ className, ...props }, ref) => (
   <PaginationLink
+    ref={ref}
     aria-label="Go to previous page"
     size="default"
     className={cn("gap-1 pl-2.5", className)}
@@ -71,14 +84,15 @@ const PaginationPrevious = ({
     <ChevronLeft className="h-4 w-4" />
     <span>Previous</span>
   </PaginationLink>
-)
+))
 PaginationPrevious.displayName = "PaginationPrevious"
 
-const PaginationNext = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
+const PaginationNext = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<typeof PaginationLink>
+>(({ className, ...props }, ref) => (
   <PaginationLink
+    ref={ref}
     aria-label="Go to next page"
     size="default"
     className={cn("gap-1 pr-2.5", className)}
@@ -87,7 +101,7 @@ const PaginationNext = ({
     <span>Next</span>
     <ChevronRight className="h-4 w-4" />
   </PaginationLink>
-)
+))
 PaginationNext.displayName = "PaginationNext"
 
 const PaginationEllipsis = ({
@@ -104,6 +118,86 @@ const PaginationEllipsis = ({
   </span>
 )
 PaginationEllipsis.displayName = "PaginationEllipsis"
+
+export function PaginationComponent({
+  datacount,
+  currentpage,
+  perpagedata,
+  setcurrentpage,
+  classname,
+  ...props
+}: PaginationProps) {
+  const totalPages = Math.ceil(datacount / perpagedata)
+
+  const canGoPrevious = currentpage > 1
+  const canGoNext = currentpage < totalPages
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setcurrentpage(page)
+    }
+  }
+
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, currentpage - Math.floor(maxVisiblePages / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+
+    return pages
+  }
+
+  if (totalPages <= 1) return null
+
+  return (
+    <Pagination className={cn("space-x-2", classname)} {...props}>
+      <PaginationItem>
+        <PaginationPrevious
+          onClick={() => handlePageChange(1)}
+          disabled={!canGoPrevious}
+        />
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationPrevious
+          onClick={() => handlePageChange(currentpage - 1)}
+          disabled={!canGoPrevious}
+        />
+      </PaginationItem>
+      <PaginationContent>
+        {getPageNumbers().map((page) => (
+          <PaginationItem key={page}>
+            <PaginationLink
+              isActive={currentpage === page}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+      </PaginationContent>
+      <PaginationItem>
+        <PaginationNext
+          onClick={() => handlePageChange(currentpage + 1)}
+          disabled={!canGoNext}
+        />
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationNext
+          onClick={() => handlePageChange(totalPages)}
+          disabled={!canGoNext}
+        />
+      </PaginationItem>
+    </Pagination>
+  )
+}
 
 export {
   Pagination,

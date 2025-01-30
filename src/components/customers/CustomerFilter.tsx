@@ -1,50 +1,20 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import {
-  Utils as QbUtils,
-  ImmutableTree,
-  Config,
-  JsonGroup,
-  BuilderProps
-} from '@react-awesome-query-builder/core'
-import {
-  Query,
-  Builder
-} from '@react-awesome-query-builder/ui'
-import { filterConfig } from './CustomersFilterConfig'
+import { useState } from 'react'
+import { Card, CardBody } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
-import { SaveFilterModal } from './SaveFilterModal'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { filterConfig } from './CustomersFilterConfig'
+import { Loader } from '@/components/common/Loader'
 
 interface CustomerFilterProps {
   isLoading: boolean
   setIsFilterResult: (value: boolean) => void
-  onFilterCustomers: (filters: JsonGroup) => void
-  currentFilters: { query?: JsonGroup }
-  setCurrentFilters: (filters: { query?: JsonGroup }) => void
+  onFilterCustomers: (filters: any) => void
+  currentFilters: any
+  setCurrentFilters: (filters: any) => void
   handleSegmentCreationSuccess: () => void
-}
-
-const emptyQuery: JsonGroup = { 
-  id: QbUtils.uuid(), 
-  type: 'group',
-  properties: {
-    conjunction: 'AND',
-    not: false
-  },
-  children1: {
-    '0': {
-      type: 'rule',
-      properties: {
-        field: null,
-        operator: null,
-        value: [],
-        valueSrc: [],
-        valueType: []
-      }
-    }
-  }
 }
 
 export function CustomerFilter({
@@ -55,86 +25,69 @@ export function CustomerFilter({
   setCurrentFilters,
   handleSegmentCreationSuccess
 }: CustomerFilterProps) {
-  const [tree, setTree] = useState<ImmutableTree>(QbUtils.checkTree(
-    QbUtils.loadTree(currentFilters.query || emptyQuery),
-    filterConfig
-  ))
-  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [filters, setFilters] = useState(currentFilters)
 
-  const onChange = useCallback((immutableTree: ImmutableTree, config: Config) => {
-    setTree(immutableTree)
-    const queryValue = QbUtils.getTree(immutableTree)
-    setCurrentFilters({
-      query: queryValue as JsonGroup
-    })
-  }, [setCurrentFilters])
-
-  const renderBuilder = useCallback((props: BuilderProps) => (
-    <div className="query-builder-container">
-      <Builder {...props} />
-    </div>
-  ), [])
-
-  const handleFilter = () => {
-    const queryValue = QbUtils.getTree(tree) as JsonGroup
-    if (queryValue.children1 && Object.keys(queryValue.children1).length > 0) {
-      setIsFilterResult(true)
-      onFilterCustomers(queryValue)
-    }
+  const handleFilterChange = (field: string, value: any) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
-  const handleClear = () => {
-    setTree(QbUtils.checkTree(
-      QbUtils.loadTree(emptyQuery),
-      filterConfig
-    ))
+  const handleApplyFilter = async () => {
+    setIsFilterResult(true)
+    setCurrentFilters(filters)
+    await onFilterCustomers(filters)
+  }
+
+  const handleClearFilter = () => {
+    setFilters({})
     setCurrentFilters({})
     setIsFilterResult(false)
   }
 
-  const handleSaveFilter = async (name: string) => {
-    console.log('Saving filter with name:', name)
+  if (isLoading) {
+    return <Loader />
   }
 
   return (
-    <>
-      <div className="space-y-4">
-        <div className="qb-lite">
-          <Query
-            {...filterConfig}
-            value={tree}
-            onChange={onChange}
-            renderBuilder={renderBuilder}
-          />
+    <Card className="mb-6">
+      <CardBody>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(filterConfig).map(([key, config]: [string, any]) => (
+            <div key={key} className="space-y-2">
+              <label className="text-sm font-medium">{config.label}</label>
+              {config.type === 'select' ? (
+                <Select
+                  value={filters[key] || ''}
+                  onValueChange={(value) => handleFilterChange(key, value)}
+                >
+                  <option value="">Select {config.label}</option>
+                  {config.options.map((option: any) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  type={config.type}
+                  value={filters[key] || ''}
+                  onChange={(e) => handleFilterChange(key, e.target.value)}
+                  placeholder={`Enter ${config.label.toLowerCase()}`}
+                />
+              )}
+            </div>
+          ))}
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowSaveModal(true)}>
-            Save Filter
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button variant="outline" onClick={handleClearFilter}>
+            Clear
           </Button>
-          <Button
-            onClick={handleFilter}
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Apply Filter
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={handleClear}
-            disabled={isLoading}
-            className="text-red-500 hover:text-red-600 border-red-200"
-          >
-            Clear Filter
-          </Button>
+          <Button onClick={handleApplyFilter}>Apply Filters</Button>
         </div>
-      </div>
-
-      <SaveFilterModal 
-        open={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        onSave={handleSaveFilter}
-      />
-    </>
+      </CardBody>
+    </Card>
   )
 } 

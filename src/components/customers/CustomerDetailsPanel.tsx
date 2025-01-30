@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Mail, Phone, Calendar, User2, Clock, DollarSign } from 'lucide-react'
+import {  Mail, Phone, Calendar, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TCustomerModelJSON, TTransactionModelJSON } from '@shoutout-labs/market_buzz_crm_types'
 import { cn } from '@/lib/utils'
@@ -21,10 +21,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface CustomerDetailsPanelProps {
   customer: TCustomerModelJSON
-  onClose: () => void
 }
 
-export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanelProps) {
+export function CustomerDetailsPanel({ customer }: CustomerDetailsPanelProps) {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [limit] = useState<number>(5)
   const [skip, setSkip] = useState<number>(0)
@@ -85,9 +84,6 @@ export function CustomerDetailsPanel({ customer, onClose }: CustomerDetailsPanel
             </h2>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Content */}
